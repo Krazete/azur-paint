@@ -8,8 +8,6 @@ def mkdir(path):
 
 mkdir('output')
 
-aitex = UnityPy.load('input/painting/aijiang_tex')
-
 # aiface = UnityPy.load('input/paintingface/aijiang')
 # for value in aiface.assets[0].values():
 #     if value.type.name == 'Mesh':
@@ -42,6 +40,10 @@ def get_mesh_and_texture(asset, save=False):
             if texture:
                 print('Multiple textures found in asset:', asset.name)
             texture = value.read()
+    if not mesh:
+        print('No mesh found.')
+    if not texture:
+        print('No texture found.')
     if save:
         mkdir('output/intermediate')
         with open('output/intermediate/mesh.obj', 'w', newline='') as file:
@@ -103,17 +105,27 @@ def stitch_patches(canvas, patches, v):
         ymin = min(y for x, y, z in v[a:b])
         canvas.paste(patch, (xmin, ymin))
 
-def rebuild_sprite(env, show=False, save=False, save_intermediate=False):
+def rebuild_sprite(name, show=False, save=True, save_intermediate=False):
+    print(name)
+    env = UnityPy.load('input/painting/{}_tex'.format(name))
     for asset in env.assets:
         mesh, texture = get_mesh_and_texture(asset, save_intermediate)
-        v, vt = get_vertices(mesh, texture)
-        patches = get_patches(texture, vt, save_intermediate)
-        canvas = get_canvas(v)
-        stitch_patches(canvas, patches, v)
+        if mesh:
+            v, vt = get_vertices(mesh, texture)
+            patches = get_patches(texture, vt, save_intermediate)
+            canvas = get_canvas(v)
+            stitch_patches(canvas, patches, v)
+        else:
+            canvas = texture.image
         if show:
             canvas.show()
         if save:
-            canvas.save('output/aijiang.png')
+            canvas.save('output/{}.png'.format(name))
 
 if __name__ == '__main__':
-    rebuild_sprite(aitex, False, True, True)
+    rebuild_sprite('aijiang', save_intermediate=True)
+
+    for root, dirs, files in os.walk("input/painting"):
+        for file in files:
+            if file.startswith('vtuber') and file.endswith('_tex'):
+                rebuild_sprite(file[:-4])
