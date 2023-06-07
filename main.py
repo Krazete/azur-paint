@@ -113,7 +113,7 @@ def rebuild_sprite(env, show=False, save=False, save_intermediate=False):
         if show:
             canvas.show()
         if save:
-            canvas.save('output/result.png')
+            canvas.save('output/aijiang.png')
 
 if __name__ == '__main__':
     rebuild_sprite(aitex, False, True, True)

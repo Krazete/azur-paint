@@ -1,3 +1,9 @@
-input
-output
+input/**
+!input/painting
+!input/painting/aijiang
+!input/painting/aijiang_tex
+!input/paintingface
+!input/paintingface/aijiang
+output/**
+!output/aijiang.png
 venv
