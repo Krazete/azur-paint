@@ -9,85 +9,111 @@ def mkdir(path):
 mkdir('output')
 
 aitex = UnityPy.load('input/painting/aijiang_tex')
-# aitex = UnityPy.load('input/painting/tbniang_tex')
 
-for asset in aitex.assets:
-    obj = False
-    png = False
-    fn = False
+# aiface = UnityPy.load('input/paintingface/aijiang')
+# for value in aiface.assets[0].values():
+#     if value.type.name == 'Mesh':
+#         obj = value.read()
+#         print(obj)
+#     if value.type.name == 'Texture2D':
+#         png = value.read()
+#         fn = png.name
+#         print(fn, png.image)
+
+# aiinfo = UnityPy.load('input/painting/aijiang')
+# for value in aiinfo.assets[0].values():
+#     if value.type.name == 'GameObject':
+#         print(value.read().name)
+#         for component in value.read().m_Component[0].values():
+#             print(component.read().m_LocalPosition)
+#         print(value.read().m_Component[0].values())
+#         print()
+#         break
+
+def get_mesh_and_texture(asset, save=False):
+    mesh = None
+    texture = None
     for value in asset.values():
         if value.type.name == 'Mesh':
-            if obj:
-                print('Multiple meshes found.')
-            obj = value.read()
+            if mesh:
+                print('Multiple meshes found in asset:', asset.name)
+            mesh = value.read()
         if value.type.name == 'Texture2D':
-            if png or fn:
-                print('Multiple textures found.')
-            png = value.read()
-            fn = png.name
-    with open('output/mesh.obj', 'w', newline='') as fp:
-        fp.write(mesh.export())
-    png.image.save('output/texture.png')
-    print(fn)
+            if texture:
+                print('Multiple textures found in asset:', asset.name)
+            texture = value.read()
+    if save:
+        mkdir('output/intermediate')
+        with open('output/intermediate/mesh.obj', 'w', newline='') as file:
+            file.write(mesh.export())
+        texture.image.save('output/intermediate/texture.png')
+    return mesh, texture
 
-    # get vertices
+def get_vertices(mesh, texture):
+    w = texture.image.width
+    h = texture.image.height
+    v = [] # mesh vertices
+    vt = [] # texture vertices
+    # unused: g (group names), f (faces)
+    for line in mesh.export().splitlines():
+        if line.startswith('v '):
+            x, y, z = line.split(' ')[1:]
+            v.append((int(x), int(y), int(z)))
+        if line.startswith('vt '):
+            x, y = line.split(' ')[1:]
+            vt.append((w * float(x), h - h * float(y)))
+    assert len(v) == len(vt), 'Unequal number of mesh vertices to texture vertices.'
+    xmax = max(x for x, y, z in v)
+    ymax = max(y for x, y, z in v)
+    v = [(xmax - x, ymax - y, z) for x, y, z in v]
+    return v, vt
 
-    w = png.image.width
-    h = png.image.height
+def get_patches(texture, vt, save=False):
+    patches = []
+    n = int(len(vt) / 4)
+    for i in range(n):
+        a = i * 4
+        b = a + 4
+        xmin = min(x for x, y in vt[a:b])
+        xmax = max(x for x, y in vt[a:b])
+        ymin = min(y for x, y in vt[a:b])
+        ymax = max(y for x, y in vt[a:b])
+        patch = texture.image.crop((xmin, ymin, xmax, ymax))
+        if save:
+            mkdir('output/intermediate/patches')
+            patch.save('output/intermediate/patches/{:04d}.png'.format(i))
+        patches.append(patch)
+    return patches
 
-    v = []
-    vt = []
-    for line in obj.export().split('\n'):
-        if line[:2] == 'v ':
-            ints = [int(n) for n in line.split(' ')[1:]]
-            assert ints[2] == 0
-            v.append(ints[:2])
-        if line[:3] == 'vt ':
-            floats = [float(n) for n in line.split(' ')[1:]]
-            vt.append([w * floats[0], h - h * floats[1]])
+def get_canvas(v):
+    xmin = min(x for x, y, z in v)
+    xmax = max(x for x, y, z in v)
+    ymin = min(y for x, y, z in v)
+    ymax = max(y for x, y, z in v)
+    # true dimensions are found in input/paintings/aijiang
+    # within assets[0].values() of type name MonoBehaviour
+    # where value.read_typetree() has the key mRawSpriteSize
+    return Image.new('RGBA', (xmax - xmin, ymax - ymin))
 
-    # cut rectangles from textures
+def stitch_patches(canvas, patches, v):
+    for i, patch in enumerate(patches):
+        a = i * 4
+        b = a + 4
+        xmin = min(x for x, y, z in v[a:b])
+        ymin = min(y for x, y, z in v[a:b])
+        canvas.paste(patch, (xmin, ymin))
 
-    assert len(v) == len(vt)
+def rebuild_sprite(env, show=False, save=False, save_intermediate=False):
+    for asset in env.assets:
+        mesh, texture = get_mesh_and_texture(asset, save_intermediate)
+        v, vt = get_vertices(mesh, texture)
+        patches = get_patches(texture, vt, save_intermediate)
+        canvas = get_canvas(v)
+        stitch_patches(canvas, patches, v)
+        if show:
+            canvas.show()
+        if save:
+            canvas.save('output/result.png')
 
-    p = []
-    vtlen = int(len(vt) / 4)
-    for n in range(vtlen):
-        i = n * 4
-        j = i + 4
-        x0 = min(x for x, y in vt[i:j])
-        x1 = max(x for x, y in vt[i:j])
-        y0 = min(y for x, y in vt[i:j])
-        y1 = max(y for x, y in vt[i:j])
-        p.append(png.image.crop([x0, y0, x1, y1]))
-
-    # make canvas
-
-    cx0 = min(x for x, y in v)
-    cx1 = max(x for x, y in v)
-    cy0 = min(y for x, y in v)
-    cy1 = max(y for x, y in v)
-    canvas = Image.new('RGBA', (cx1 - cx0, cy1 - cy0))
-
-    # paste rectangles onto canvas
-
-    mkdir('output/pieces')
-
-    n = 0
-    for piece in p:
-        i = n * 4
-        j = i + 4
-        x0 = min(x for x, y in v[i:j])
-        x1 = max(x for x, y in v[i:j])
-        y0 = min(y for x, y in v[i:j])
-        y1 = max(y for x, y in v[i:j])
-        piece.save('output/pieces/{:0d}.png'.format(n))
-        canvas.paste(piece, (-x1, cy1 - y1))
-        n += 1
-
-# canvas.show()
-canvas.save('output/result.png')
-# help(canvas.paste)
-# piece.size
-# dir(obj)
-# obj.get_raw_data().tolist()
+if __name__ == '__main__':
+    rebuild_sprite(aitex, False, True, True)
