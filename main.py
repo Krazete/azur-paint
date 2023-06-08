@@ -6,16 +6,6 @@ def mkdir(path):
     if not os.path.exists(path):
         os.mkdir(path)
 
-# aiface = UnityPy.load('input/paintingface/aijiang')
-# for value in aiface.assets[0].values():
-#     if value.type.name == 'Mesh':
-#         obj = value.read()
-#         print(obj)
-#     if value.type.name == 'Texture2D':
-#         png = value.read()
-#         fn = png.name
-#         print(fn, png.image)
-
 def check_unique(array, label):
     if len(array) < 1:
         print('  No {} found.'.format(label))
@@ -136,8 +126,22 @@ def rebuild_sprite(name, show=False, save=True, save_intermediate=False):
             canvas.save('output/{}.png'.format(name))
     return info, kit
 
+def get_faces(name, save=True):
+    kit = UnityPy.load('input/paintingface/{}'.format(name))
+    faces = []
+    for asset in kit.assets:
+        for value in asset.values():
+            if value.type.name == 'Texture2D':
+                faces.append(value.read())
+    if save:
+        mkdir('output/faces')
+        for face in faces:
+            face.image.save('output/faces/{}-{}.png'.format(name, face.name))
+    return faces
+
 if __name__ == '__main__':
     info, kit = rebuild_sprite('aijiang', save_intermediate=True)
+    faces = get_faces('tbniang')
 
     for root, dirs, files in os.walk("input/painting"):
         for file in files:
