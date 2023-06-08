@@ -113,13 +113,17 @@ def rebuild_sprite(name, show=False, save=True, save_intermediate=False):
     kit = UnityPy.load('input/painting/{}_tex'.format(name))
     for asset in kit.assets:
         mesh, texture = get_mesh_and_texture(asset, save_intermediate)
-        if mesh:
+        if mesh and texture:
             v, vt = get_vertices(mesh, texture)
             patches = get_patches(texture, vt, save_intermediate)
             canvas = get_canvas(v, size)
             stitch_patches(canvas, patches, v)
-        else:
+        elif texture:
             canvas = texture.image
+        else:
+            canvas = None
+            print('  Cannot rebuild sprite for {}.'.format(name))
+            break
         if show:
             canvas.show()
         if save:
