@@ -124,7 +124,7 @@ def rebuild_sprite(name, show=False, save=True, save_intermediate=False):
             canvas.show()
         if save:
             canvas.save('output/{}.png'.format(name))
-    return info, kit
+    return info, kit, canvas
 
 def get_faces(name, save=True):
     kit = UnityPy.load('input/paintingface/{}'.format(name))
@@ -139,11 +139,49 @@ def get_faces(name, save=True):
             face.image.save('output/faces/{}-{}.png'.format(name, face.name))
     return faces
 
+def get_face_anchor(info):
+    anchors = []
+    for asset in info.assets:
+        for value in asset.values():
+            if value.type.name == 'GameObject':
+                gameobject = value.read()
+                if gameobject.name == 'face':
+                    tree = gameobject.read_typetree()
+                    for componentptr in tree['m_Component']:
+                        pid = componentptr['component']['m_PathID']
+                        component = asset[pid]
+                        if component.type.name == 'RectTransform':
+                            recttransform = component.read_typetree()
+                            anchors.append(recttransform['m_AnchoredPosition'])
+    return check_unique(anchors, 'face anchors')
+
+def paste_face(name, canvas, face, anchor, show=False, save=True):
+    # this function is slightly inaccurate
+    # either the anchor position or the canvas creation is off
+    # also this fails for many cases e.g. tower
+    copy = canvas.copy()
+    copy.paste(face.image, (
+        int((canvas.width - face.image.width) / 2 + anchor['x']),
+        int((canvas.height - face.image.height) / 2 - anchor['y'])
+    ))
+    if show:
+        copy.show()
+    if save:
+        mkdir('output/expressions')
+        copy.save('output/expressions/{}-{}.png'.format(name, face.name))
+
 if __name__ == '__main__':
-    info, kit = rebuild_sprite('aijiang', save_intermediate=True)
+    info, kit, canvas = rebuild_sprite('aijiang', save_intermediate=True)
     faces = get_faces('tbniang')
 
     for root, dirs, files in os.walk("input/painting"):
         for file in files:
             if file.startswith('vtuber') and file.endswith('_tex'):
-                info, kit = rebuild_sprite(file[:-4])
+                info, kit, canvas = rebuild_sprite(file[:-4])
+
+    name = 'unknown3' # purifier
+    info, kit, canvas = rebuild_sprite(name, save=False)
+    faces = get_faces(name, save=False)
+    anchor = get_face_anchor(info)
+    for face in faces:
+        paste_face(name, canvas, face, anchor)
