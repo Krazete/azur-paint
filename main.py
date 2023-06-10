@@ -91,11 +91,14 @@ def get_canvas(v, size=None):
     ymax = max(y for x, y in v)
     dx = 1 + xmax - xmin
     dy = 1 + ymax - ymin
-    if size and size[0] != dx:
+    if not size:
+        print('  No reported size given.')
+        return Image.new('RGBA', (dx, dy))
+    if size[0] != dx:
         print('  Reported width ({}) and mesh width ({}) do not match.'.format(size[0], dx))
-    if size and size[1] != dy:
+    if size[1] != dy:
         print('  Reported height ({}) and mesh height ({}) do not match.'.format(size[1], dy))
-    return Image.new('RGBA', (dx, dy))
+    return Image.new('RGBA', size)
 
 def stitch_patches(canvas, patches, v):
     for i, patch in enumerate(patches):
