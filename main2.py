@@ -1,66 +1,72 @@
 from main import *
 
-# name = 'shaenhuosite_alter'
-# info, kit, canvas = rebuild_sprite(name)
-# for asset in info.assets:
-#     for value in asset.values():
-#         tree = value.read_typetree()
-#         print(value.read())
-#         for key in tree:
-#             if 'm' in key.lower():
-#                 print(tree)
-#                 break
-#             try:
-#                 if 'm' in tree[key].lower():
-#                     print(tree)
-#                     break
-#             except:
-#                 pass
-#         print()
+def get_layers(asset, layers={}, id=None, parent=None):
+    if id is None:
+        for value in asset.values():
+            if value.type.name == 'AssetBundle':
+                bundle = value.read_typetree()
+        id = bundle['m_Container'][0][1]['asset']['m_PathID']
+    print(id)
+    gameobject = asset[id].read_typetree()
 
-def get_layers(env):
-    asset = env.assets[0]
-    for value in asset.values():
-        if value.type.name == 'AssetBundle':
-            bundle = value.read_typetree()
+    children = None
+    mesh_id = None
+    entry = {}
+    for ptr in gameobject['m_Component']:
+        component_id = ptr['component']['m_PathID']
+        component = asset[component_id]
+        tree = component.read_typetree()
+        if component.type.name == 'RectTransform':
+            entry['position'] = tree['m_LocalPosition']
+            entry['scale'] = tree['m_LocalScale']
+            entry['delta'] = tree['m_SizeDelta']
+            entry['pivot'] = tree['m_Pivot']
+            children = tree['m_Children']
+        if 'mMesh' in tree:
+            mesh_id = tree['mMesh']['m_PathID']
+            sprite_id = tree['m_Sprite']['m_PathID']
+            entry['size'] = tree['mRawSpriteSize']
+    if mesh_id is not None:
+        tex = UnityPy.load('input/painting/{}_tex'.format(gameobject['m_Name']))
+        texas = tex.assets[0]
+        entry['mesh'] = texas[mesh_id].read()
+        sprite = texas[sprite_id].read_typetree()
+        texture_id = sprite['m_RD']['texture']['m_PathID']
+        entry['texture'] = texas[texture_id].read()
+    if parent is not None:
+        entry['parent'] = parent
 
-    layers = []
-    first_id = bundle['m_Container'][0][1]['asset']['m_PathID']
-    first = asset[first_id].read_typetree()
-    layers.append(first)
+    layers[id] = entry
 
-    child_id = first['m_Component'][0]['component']['m_PathID']
-    child = asset[child_id].read_typetree()
-    grand_id = child['m_Children'][0]['m_PathID']
-    grand = asset[grand_id].read_typetree()
-    for ptr in grand['m_Children']:
-        rect_id = ptr['m_PathID']
-        rect = asset[rect_id].read_typetree()
-        layer_id = rect['m_GameObject']['m_PathID']
-        layer = asset[layer_id].read_typetree()
-        layers.append(layer)
-    return layers
-
-
+    if children is not None:
+        for rt_ptr in children:
+            rt_id = rt_ptr['m_PathID']
+            rt = asset[rt_id].read_typetree()
+            child_id = rt['m_GameObject']['m_PathID']
+            get_layers(asset, layers, child_id, id)
 
 # env = UnityPy.load('input/painting/shaenhuosite_alter')
 # env = UnityPy.load('input/painting/makeboluo')
 env = UnityPy.load('input/painting/tower')
-layers = get_layers(env)
+# env = UnityPy.load('input/painting/adaerbote_2')
+# env = UnityPy.load('input/painting/ankeleiqi')
+layers = {}
+get_layers(env.assets[0], layers) # keys ordered bottom to top
+
+for i in layers:
+    layer = layers[i]
+    if 'mesh' in layer:
+        print(layer['texture'])
 
 layersinfo = {}
-rawlayersinfo = []
 
 asset = env.assets[0]
 for layer in layers:
-    rawlinfo = []
     name = layer['m_Name']
     cdl = layer['m_Component']
-    rawlinfo.append(name)
     for cd in cdl:
         component_id = cd['component']['m_PathID']
         component = asset[component_id].read_typetree()
-        rawlinfo.append(component)
         # print(component)
         if 'mMesh' in component:
             mesh_id = component['mMesh']['m_PathID']
@@ -71,7 +77,6 @@ for layer in layers:
             pivot = component['m_Pivot']
             anchpos = component['m_AnchoredPosition']
     layersinfo[name] = [mesh_id, sprite_id, size, delta, pivot, anchpos]
-    rawlayersinfo.append(rawlinfo)
     print(name, layersinfo[name])
     print('---')
 
@@ -107,10 +112,11 @@ for i, name in enumerate(layersinfo):
             int((size0['y'] - linfo[3]['y'] + anchpos['y']) * pivot['y'])
         )
         # should be (1155, 3135) for tower_rw
-        body.paste(linfo[-1], p, linfo[-1]) # doesn't do transparency properly
+        # or, maybe (1155, 3575)?
+        body.alpha_composite(linfo[-1], p) # paste loses color info
 body.show()
 
-
-
-# todo:
-# - find where (x, y) to paste layers
+# how to properly position:
+# - first: -(sizedelta * pivot * scale - localposition)
+# - subsq: -((sizedelta * pivot * scale - localposition) * parentscale - parentposition)
+# - also scale by total scale
