@@ -45,6 +45,8 @@ def get_layers(asset, layers={}, id=None, parent=None):
             child_id = rt['m_GameObject']['m_PathID']
             get_layers(asset, layers, child_id, id)
 
+# oddity: jiahe_3-5 output jiahe_6 for some reason
+
 # env = UnityPy.load('input/painting/shaenhuosite_alter')
 # env = UnityPy.load('input/painting/makeboluo')
 env = UnityPy.load('input/painting/tower')
@@ -58,63 +60,32 @@ for i in layers:
     if 'mesh' in layer:
         print(layer['texture'])
 
-layersinfo = {}
 
-asset = env.assets[0]
-for layer in layers:
-    name = layer['m_Name']
-    cdl = layer['m_Component']
-    for cd in cdl:
-        component_id = cd['component']['m_PathID']
-        component = asset[component_id].read_typetree()
-        # print(component)
-        if 'mMesh' in component:
-            mesh_id = component['mMesh']['m_PathID']
-            sprite_id = component['m_Sprite']['m_PathID']
-            size = component['mRawSpriteSize']
-        if 'm_SizeDelta' in component:
-            delta = component['m_SizeDelta']
-            pivot = component['m_Pivot']
-            anchpos = component['m_AnchoredPosition']
-    layersinfo[name] = [mesh_id, sprite_id, size, delta, pivot, anchpos]
-    print(name, layersinfo[name])
-    print('---')
+master = Image.new(encompassing_rect)
+for i in layers:
+    layer = layers[i]
+    if 'mesh' in layer and 'texture' in layer:
+        v, vt = get_vertices(layer['mesh'], layer['texture'])
+        patches = get_patches(layer['texture'], vt)
+        canvas = get_canvas(v, (int(layer['size']['x']), int(layer['size']['y'])))
+        stitch_patches(canvas, patches, v)
+        scaled_canvas = canvas.resize((int(layer['delta']['x']), int(layer['delta']['y'])))
+        do_other_transforming_things_to_scaled_canvas()
+        maybe_also_flip_everything_first()
+        master.alpha_composite(canvas) # paste loses color info
+unflip_everything_if_needed()
+master.show()        
 
-for name in layersinfo:
-    linfo = layersinfo[name]
-    kit = UnityPy.load('input/painting/{}_tex'.format(name))
-    kass = kit.assets[0]
-    mesh = kass[linfo[0]].read()
-    sprite = kass[linfo[1]].read_typetree()
-    texture_id = sprite['m_RD']['texture']['m_PathID']
-    texture = kass[texture_id].read()
-    # mesh, texture = get_mesh_and_texture(kass)
-    v, vt = get_vertices(mesh, texture)
-    patches = get_patches(texture, vt)
-    canvas = get_canvas(v, (int(linfo[2]['x']), int(linfo[2]['y'])))
-    stitch_patches(canvas, patches, v)
-    layersinfo[name].append(canvas)
-for name in layersinfo:
-    linfo = layersinfo[name]
-    layersinfo[name].append(linfo[-1].resize((int(linfo[3]['x']), int(linfo[3]['y']))))
-
-for i, name in enumerate(layersinfo):
-    linfo = layersinfo[name]
-    # linfo[-1].save('{}.png'.format(i))
-    if i == 0:
-        body = linfo[-1].copy()
-        size0 = linfo[3]
-    else:
-        pivot = linfo[4]
-        anchpos = linfo[5]
-        p = (
-            int((size0['x'] - linfo[3]['x'] + anchpos['x']) * pivot['x']),
-            int((size0['y'] - linfo[3]['y'] + anchpos['y']) * pivot['y'])
-        )
-        # should be (1155, 3135) for tower_rw
-        # or, maybe (1155, 3575)?
-        body.alpha_composite(linfo[-1], p) # paste loses color info
-body.show()
+def get_position(layer, x=None, y=None):
+    if x is None or y is None:
+        x = layer['delta']['x'] * layer['pivot']['x'] * layer['scale']['x'] - layer['position']['x']
+        y = layer['delta']['y'] * layer['pivot']['y'] * layer['scale']['y'] - layer['position']['y']
+    if 'parent' in layer:
+        parent = layers[layer['parent']]
+        x = x * parent['scale']['x'] - parent['position']['x']
+        y = y * parent['scale']['y'] - parent['position']['y']
+        return get_position(parent, x, y)
+    return (-x, -y)
 
 # how to properly position:
 # - first: -(sizedelta * pivot * scale - localposition)
