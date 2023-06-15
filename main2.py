@@ -47,11 +47,13 @@ def get_layers(asset, layers={}, id=None, parent=None):
 
 # oddity: jiahe_3-5 output jiahe_6 for some reason
 
-env = UnityPy.load('input/painting/shaenhuosite_alter')
-# env = UnityPy.load('input/painting/makeboluo')
-# env = UnityPy.load('input/painting/tower')
-# env = UnityPy.load('input/painting/adaerbote_2')
-# env = UnityPy.load('input/painting/ankeleiqi')
+# name = 'shaenhuosite_alter'
+# name = 'makeboluo'
+# name = 'tower'
+# name = 'adaerbote_2'
+name = 'ankeleiqi'
+# name = 'buleisite_2'
+env = UnityPy.load('input/painting/{}'.format(name))
 layers = {}
 get_layers(env.assets[0], layers) # keys ordered bottom to top
 
@@ -114,11 +116,7 @@ for i in layers:
         )).transpose(Image.Transpose.FLIP_TOP_BOTTOM)
         master.alpha_composite(scaled_flipped_canvas, (int(layer['box'][0]), int(layer['box'][1])))
 unflipped_master = master.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
-unflipped_master.show()
+# unflipped_master.show()
 
-# from pprint import pprint as pp
-# pp(layers, sort_dicts=False)
-
-# rebuild_sprite('shaenhuosite_alter', save_intermediate=True)
-# rebuild_sprite('shaenhuosite_alter_front', save_intermediate=True)
-# rebuild_sprite('shaenhuosite_alter_rw', save_intermediate=True)
+mkdir('output2')
+unflipped_master.save('output2/{}.png'.format(name))
