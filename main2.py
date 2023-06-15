@@ -107,7 +107,7 @@ for i in layers:
         v, vt = get_vertices(layer['mesh'], layer['texture'])
         patches = get_patches(layer['texture'], vt)
         canvas = get_canvas(v, (int(layer['size']['x']), int(layer['size']['y'])))
-        stitch_patches(canvas, patches, v)
+        stitch_patches(canvas, patches, v, layer['mesh'])
         scaled_flipped_canvas = canvas.resize((
             int(layer['box'][2] - layer['box'][0]),
             int(layer['box'][3] - layer['box'][1])

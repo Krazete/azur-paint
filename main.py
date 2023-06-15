@@ -100,13 +100,16 @@ def get_canvas(v, size=None):
         print('  Reported height ({}) and mesh height ({}) do not match.'.format(size[1], dy))
     return Image.new('RGBA', size)
 
-def stitch_patches(canvas, patches, v):
+def stitch_patches(canvas, patches, v, mesh):
     for i, patch in enumerate(patches):
         a = i * 4
         b = a + 4
         xmin = min(x for x, y in v[a:b])
         ymin = min(y for x, y in v[a:b])
-        canvas.paste(patch, (xmin, ymin))
+        canvas.paste(patch, (
+            int(xmin + mesh.read_typetree()['m_LocalAABB']['m_Center']['x'] - mesh.read_typetree()['m_LocalAABB']['m_Extent']['x']),
+            int(ymin + canvas.height - mesh.read_typetree()['m_LocalAABB']['m_Center']['y'] - mesh.read_typetree()['m_LocalAABB']['m_Extent']['y'])
+        ))
 
 def rebuild_sprite(name, show=False, save=True, save_intermediate=False):
     print(name)
@@ -120,7 +123,7 @@ def rebuild_sprite(name, show=False, save=True, save_intermediate=False):
             v, vt = get_vertices(mesh, texture)
             patches = get_patches(texture, vt, save_intermediate)
             canvas = get_canvas(v, size)
-            stitch_patches(canvas, patches, v)
+            stitch_patches(canvas, patches, v, mesh)
         elif texture:
             canvas = texture.image
         else:
