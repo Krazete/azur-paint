@@ -47,21 +47,60 @@ def get_layers(asset, layers={}, id=None, parent=None):
 
 # oddity: jiahe_3-5 output jiahe_6 for some reason
 
-# env = UnityPy.load('input/painting/shaenhuosite_alter')
+env = UnityPy.load('input/painting/shaenhuosite_alter')
 # env = UnityPy.load('input/painting/makeboluo')
-env = UnityPy.load('input/painting/tower')
+# env = UnityPy.load('input/painting/tower')
 # env = UnityPy.load('input/painting/adaerbote_2')
 # env = UnityPy.load('input/painting/ankeleiqi')
 layers = {}
 get_layers(env.assets[0], layers) # keys ordered bottom to top
 
+def get_position_box(layer, x=None, y=None, w=None, h=None): # todo: add upscale parameter
+    if x is None or y is None:
+        x = layer['delta']['x'] * layer['pivot']['x'] * layer['scale']['x'] - layer['position']['x']
+        y = layer['delta']['y'] * layer['pivot']['y'] * layer['scale']['y'] - layer['position']['y']
+        w = layer['delta']['x'] * layer['scale']['x']
+        h = layer['delta']['y'] * layer['scale']['y']
+    if 'parent' in layer:
+        parent = layers[layer['parent']]
+        x = x * parent['scale']['x'] - parent['position']['x']
+        y = y * parent['scale']['y'] - parent['position']['y']
+        w *= parent['scale']['x']
+        h *= parent['scale']['y']
+        return get_position_box(parent, x, y, w, h)
+    return -x, -y, w - x, h - y
+
+# how to properly position:
+# - first: -(sizedelta * pivot * scale - localposition)
+# - subsq: -((sizedelta * pivot * scale - localposition) * parentscale - parentposition)
+# - also scale by total scale
+
+from math import inf
+
+x0 = inf
+y0 = inf
+x1 = -inf
+y1 = -inf
 for i in layers:
     layer = layers[i]
-    if 'mesh' in layer:
-        print(layer['texture'])
+    if 'size' in layer:
+        xi, yi, xj, yj = get_position_box(layer)
+        layer['box'] = [xi, yi, xj, yj]
+        x0 = min(x0, xi)
+        y0 = min(y0, yi)
+        x1 = max(x1, xj)
+        y1 = max(y1, yj)
+print(x0, y0)
+for i in layers:
+    layer = layers[i]
+    if 'box' in layer:
+        layer['box'][0] -= x0
+        layer['box'][1] -= y0
+        layer['box'][2] -= x0
+        layer['box'][3] -= y0
+        print(layer['box'])
+master = Image.new('RGBA', (int(x1 - x0 + 1), int(y1 - y0 + 1)))
 
-
-master = Image.new(encompassing_rect)
 for i in layers:
     layer = layers[i]
     if 'mesh' in layer and 'texture' in layer:
@@ -69,25 +108,17 @@ for i in layers:
         patches = get_patches(layer['texture'], vt)
         canvas = get_canvas(v, (int(layer['size']['x']), int(layer['size']['y'])))
         stitch_patches(canvas, patches, v)
-        scaled_canvas = canvas.resize((int(layer['delta']['x']), int(layer['delta']['y'])))
-        do_other_transforming_things_to_scaled_canvas()
-        maybe_also_flip_everything_first()
-        master.alpha_composite(canvas) # paste loses color info
-unflip_everything_if_needed()
-master.show()        
+        scaled_flipped_canvas = canvas.resize((
+            int(layer['box'][2] - layer['box'][0]),
+            int(layer['box'][3] - layer['box'][1])
+        )).transpose(Image.Transpose.FLIP_TOP_BOTTOM)
+        master.alpha_composite(scaled_flipped_canvas, (int(layer['box'][0]), int(layer['box'][1])))
+unflipped_master = master.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
+unflipped_master.show()
 
-def get_position(layer, x=None, y=None):
-    if x is None or y is None:
-        x = layer['delta']['x'] * layer['pivot']['x'] * layer['scale']['x'] - layer['position']['x']
-        y = layer['delta']['y'] * layer['pivot']['y'] * layer['scale']['y'] - layer['position']['y']
-    if 'parent' in layer:
-        parent = layers[layer['parent']]
-        x = x * parent['scale']['x'] - parent['position']['x']
-        y = y * parent['scale']['y'] - parent['position']['y']
-        return get_position(parent, x, y)
-    return (-x, -y)
+# from pprint import pprint as pp
+# pp(layers, sort_dicts=False)
 
-# how to properly position:
-# - first: -(sizedelta * pivot * scale - localposition)
-# - subsq: -((sizedelta * pivot * scale - localposition) * parentscale - parentposition)
-# - also scale by total scale
+# rebuild_sprite('shaenhuosite_alter', save_intermediate=True)
+# rebuild_sprite('shaenhuosite_alter_front', save_intermediate=True)
+# rebuild_sprite('shaenhuosite_alter_rw', save_intermediate=True)
