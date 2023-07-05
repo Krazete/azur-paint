@@ -2,9 +2,21 @@ import os
 import UnityPy
 from PIL import Image
 
+def split(path):
+    'Split a pathname fully by all slashes.'
+    a, b = os.path.split(path)
+    if a == '':
+        return [b]
+    return split(a) + [b]
+
 def mkdir(path):
-    if not os.path.exists(path):
-        os.mkdir(path)
+    'Make directory and all parent directories if they do not exist.'
+    lineage = split(path)
+    pathname = ''
+    for subpath in lineage:
+        pathname = os.path.join(pathname, subpath)
+        if not os.path.exists(pathname):
+            os.mkdir(pathname)
 
 def check_unique(array, label):
     if len(array) < 1:
@@ -52,11 +64,11 @@ def get_vertices(mesh, texture):
     # unused: g (group names), f (faces)
     for line in mesh.export().splitlines():
         if line.startswith('v '):
-            split = line.split(' ')[1:]
-            v_raw.append([int(n) for n in split])
+            vertex = line.split(' ')[1:]
+            v_raw.append([int(n) for n in vertex])
         if line.startswith('vt '):
-            split = line.split(' ')[1:]
-            vt_raw.append([float(n) for n in split])
+            vertex = line.split(' ')[1:]
+            vt_raw.append([float(n) for n in vertex])
     assert len(v_raw) == len(vt_raw), 'Unequal number of mesh vertices to texture vertices.'
     xmax = max(x for x, y, z in v_raw)
     ymax = max(y for x, y, z in v_raw)
@@ -78,7 +90,6 @@ def get_patches(texture, vt, save=False):
         ymax = max(y for x, y in vt[a:b])
         patch = texture.image.crop((xmin, ymin, xmax, ymax))
         if save:
-            mkdir('output/intermediate')
             mkdir('output/intermediate/{}'.format(texture.name))
             patch.save('output/intermediate/{}/{:03d}.png'.format(texture.name, i))
         patches.append(patch)
@@ -113,7 +124,6 @@ def stitch_patches(canvas, patches, v, mesh):
 
 def rebuild_sprite(name, show=False, save=True, save_intermediate=False):
     print(name)
-    mkdir('output')
     info = UnityPy.load('input/painting/{}'.format(name))
     size = get_size(info)
     kit = UnityPy.load('input/painting/{}_tex'.format(name))
@@ -133,6 +143,7 @@ def rebuild_sprite(name, show=False, save=True, save_intermediate=False):
         if show:
             canvas.show()
         if save:
+            mkdir('output')
             canvas.save('output/{}.png'.format(name))
     return info, kit, canvas
 
