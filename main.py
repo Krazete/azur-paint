@@ -39,7 +39,7 @@ def get_size(env):
                     ))
     return check_unique(sizes, 'reported sizes')
 
-def get_mesh_and_texture(asset, save=False):
+def get_mesh_and_texture(asset):
     meshes = []
     textures = []
     for value in asset.values():
@@ -49,16 +49,9 @@ def get_mesh_and_texture(asset, save=False):
             textures.append(value.read())
     mesh = check_unique(meshes, 'meshes')
     texture = check_unique(textures, 'textures')
-    if save:
-        mkdir('output/intermediate')
-        if mesh:
-            with open('output/intermediate/{}.obj'.format(mesh.name), 'w', newline='') as file:
-                file.write(mesh.export())
-        if texture:
-            texture.image.save('output/intermediate/{}.png'.format(texture.name))
     return mesh, texture
 
-def get_vertices(mesh, texture):
+def get_vertices(mesh, texture, save=False):
     v_raw = [] # mesh vertices
     vt_raw = [] # texture vertices
     # unused: g (group names), f (faces)
@@ -76,6 +69,13 @@ def get_vertices(mesh, texture):
     w = texture.image.width
     h = texture.image.height
     vt = [(w * x, h - h * y) for x, y in vt_raw]
+    if save:
+        mkdir('output/intermediate')
+        if mesh:
+            with open('output/intermediate/{}.obj'.format(mesh.name), 'w', newline='') as file:
+                file.write(mesh.export())
+        if texture:
+            texture.image.save('output/intermediate/{}.png'.format(texture.name))
     return v, vt
 
 def get_patches(texture, vt, save=False):
@@ -128,9 +128,9 @@ def rebuild_sprite(name, show=False, save=True, save_intermediate=False):
     size = get_size(info)
     kit = UnityPy.load('input/painting/{}_tex'.format(name))
     for asset in kit.assets:
-        mesh, texture = get_mesh_and_texture(asset, save_intermediate)
+        mesh, texture = get_mesh_and_texture(asset)
         if mesh and texture:
-            v, vt = get_vertices(mesh, texture)
+            v, vt = get_vertices(mesh, texture, save_intermediate)
             patches = get_patches(texture, vt, save_intermediate)
             canvas = get_canvas(v, size)
             stitch_patches(canvas, patches, v, mesh)

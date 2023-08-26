@@ -106,8 +106,8 @@ master = Image.new('RGBA', (int(x1 - x0 + 1), int(y1 - y0 + 1)))
 for i in layers:
     layer = layers[i]
     if 'mesh' in layer and 'texture' in layer:
-        v, vt = get_vertices(layer['mesh'], layer['texture'])
-        patches = get_patches(layer['texture'], vt)
+        v, vt = get_vertices(layer['mesh'], layer['texture'], True)
+        patches = get_patches(layer['texture'], vt, True)
         canvas = get_canvas(v, (int(layer['size']['x']), int(layer['size']['y'])))
         stitch_patches(canvas, patches, v, layer['mesh'])
         scaled_flipped_canvas = canvas.resize((
@@ -118,5 +118,11 @@ for i in layers:
 unflipped_master = master.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
 # unflipped_master.show()
 
+def downscale(im):
+    dmax = max(im.size)
+    if dmax > 2048:
+        return im.resize([round(d * 2048 / dmax) for d in im.size])
+    return im
+
 mkdir('output2')
-unflipped_master.save('output2/{}.png'.format(name))
+downscale(unflipped_master).save('output2/{}.png'.format(name))

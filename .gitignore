@@ -16,3 +16,4 @@ output/**
 !output/aijiang.png
 !output/ankeleiqi.png
 venv
+painting_reconstruct.py
