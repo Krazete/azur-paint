@@ -51,7 +51,8 @@ def get_layers(asset, layers={}, id=None, parent=None):
 # name = 'makeboluo'
 # name = 'tower'
 # name = 'adaerbote_2'
-name = 'ankeleiqi'
+# name = 'ankeleiqi'
+name = 'kelaimengsuo'
 # name = 'buleisite_2'
 env = UnityPy.load('input/painting/{}'.format(name))
 layers = {}
@@ -108,11 +109,12 @@ for i in layers:
     if 'mesh' in layer and 'texture' in layer:
         v, vt = get_vertices(layer['mesh'], layer['texture'], True)
         patches = get_patches(layer['texture'], vt, True)
-        canvas = get_canvas(v, (int(layer['size']['x']), int(layer['size']['y'])))
+        canvas, truesize = get_canvas(v, (int(layer['size']['x']), int(layer['size']['y'])))
+        print(truesize, layer['size'])
         stitch_patches(canvas, patches, v, layer['mesh'])
         scaled_flipped_canvas = canvas.resize((
-            int(layer['box'][2] - layer['box'][0]),
-            int(layer['box'][3] - layer['box'][1])
+            int((layer['box'][2] - layer['box'][0]) * (truesize[0] / layer['size']['x'])),
+            int((layer['box'][3] - layer['box'][1]) * (truesize[1] / layer['size']['y']))
         )).transpose(Image.Transpose.FLIP_TOP_BOTTOM)
         master.alpha_composite(scaled_flipped_canvas, (int(layer['box'][0]), int(layer['box'][1])))
 unflipped_master = master.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
@@ -125,4 +127,5 @@ def downscale(im):
     return im
 
 mkdir('output2')
-downscale(unflipped_master).save('output2/{}.png'.format(name))
+unflipped_master = downscale(unflipped_master)
+unflipped_master.save('output2/{}.png'.format(name))
