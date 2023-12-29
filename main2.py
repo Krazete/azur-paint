@@ -107,7 +107,7 @@ for i in layers:
         layer['box'][2] -= x0
         layer['box'][3] -= y0
         print(layer['box'])
-master = Image.new('RGBA', (int(x1 - x0 + 1), int(y1 - y0 + 1)))
+master = Image.new('RGBA', (int(x1 - x0), int(y1 - y0)))
 
 for i in layers:
     layer = layers[i]
