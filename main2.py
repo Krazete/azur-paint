@@ -58,6 +58,11 @@ env = UnityPy.load('input/painting/{}'.format(name))
 layers = {}
 get_layers(env.assets[0], layers) # keys ordered bottom to top
 
+for i in layers: # todo: find a better way to search for the base layer
+    layer = layers[i]
+    if 'parent' not in layer:
+        layer['scale'] = {'x': 1, 'y': 1, 'z': 1} # quickfix, ignores topmost scaling
+
 def get_position_box(layer, x=None, y=None, w=None, h=None): # todo: add upscale parameter
     if x is None or y is None:
         x = layer['delta']['x'] * layer['pivot']['x'] * layer['scale']['x'] - layer['position']['x']
