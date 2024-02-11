@@ -11,8 +11,8 @@ usage:
 ```python
 ### this script ###
 # outputs to output2 folder
-# edit the variable `name` on line ~50 first
 python -m main2
+python -m main2 -p "jiahe_3"
 
 ### nobbyfix's script ###
 # outputs to root folder
