@@ -53,6 +53,10 @@ def wrapped(painting_name):
 
     # oddity: jiahe_3-5 output jiahe_6 for some reason
     #         also linghangyuan33_1 (TBPeppy) outputs linghangyuan33_2 (TBPeppySchool)
+    #         in these cases, use https://github.com/Krazete/azur-paint/blob/c7689d/main.py
+    #                         and maybe change line 101
+    #                        from return Image.new('RGBA', size)
+    #                          to return Image.new('RGBA', (dx, dy))
 
     # name = 'shaenhuosite_alter'
     # name = 'makeboluo'
