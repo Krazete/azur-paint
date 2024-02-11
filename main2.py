@@ -1,5 +1,3 @@
-# todo: if texture but no mesh, just output texture
-
 from main import *
 from pathlib import Path
 from argparse import ArgumentParser
@@ -34,7 +32,10 @@ def wrapped(painting_name):
         if mesh_id is not None:
             tex = UnityPy.load('input/painting/{}_tex'.format(gameobject['m_Name']))
             texas = tex.assets[0]
-            entry['mesh'] = texas[mesh_id].read()
+            try:
+                entry['mesh'] = texas[mesh_id].read()
+            except:
+                print('No mesh found.')
             sprite = texas[sprite_id].read_typetree()
             texture_id = sprite['m_RD']['texture']['m_PathID']
             entry['texture'] = texas[texture_id].read()
@@ -51,6 +52,7 @@ def wrapped(painting_name):
                 get_layers(asset, layers, child_id, id)
 
     # oddity: jiahe_3-5 output jiahe_6 for some reason
+    #         also linghangyuan33_1 (TBPeppy) outputs linghangyuan33_2 (TBPeppySchool)
 
     # name = 'shaenhuosite_alter'
     # name = 'makeboluo'
@@ -128,7 +130,12 @@ def wrapped(painting_name):
                 int((layer['box'][3] - layer['box'][1]) * (truesize[1] / layer['size']['y']))
             )).transpose(Image.Transpose.FLIP_TOP_BOTTOM)
             master.alpha_composite(scaled_flipped_canvas, (int(layer['box'][0]), int(layer['box'][1])))
-    unflipped_master = master.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
+            flip = True
+        elif 'texture' in layer: # no mesh found
+            unflipped_master = layer['texture'].image
+            flip = False
+    if flip:
+        unflipped_master = master.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
     # unflipped_master.show()
 
     def downscale(im):
