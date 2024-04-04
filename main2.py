@@ -2,7 +2,7 @@ from main import *
 from pathlib import Path
 from argparse import ArgumentParser
 
-def wrapped(painting_name):
+def wrapped(painting_name, crop):
     def get_layers(asset, layers={}, id=None, parent=None):
         if id is None:
             for value in asset.values():
@@ -140,22 +140,25 @@ def wrapped(painting_name):
     unflipped_master = master.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
     # unflipped_master.show()
 
-    def trim_and_downscale(im):
-        bbox = im.getbbox()
-        imtrim = im.crop(bbox)
-        dmax = max(imtrim.size)
+    def crop_and_downscale(im, crop):
+        if crop:
+            bbox = im.getbbox()
+            im = im.crop(bbox)
+        dmax = max(im.size)
         if dmax > 2048:
-            return imtrim.resize([round(d * 2048 / dmax) for d in imtrim.size])
-        return imtrim
+            return im.resize([round(d * 2048 / dmax) for d in im.size])
+        return im
 
     mkdir('output2')
-    unflipped_master = trim_and_downscale(unflipped_master)
+    unflipped_master = crop_and_downscale(unflipped_master, crop)
     unflipped_master.save('output2/{}.png'.format(name))
 
 def main(): # copied from nobbyfix's script; todo: clean up and improve
     # create argument parser
     parser = ArgumentParser()
     parser.add_argument("-p", "--painting_name", type=str, help="the name of the painting assetbundle file")
+    parser.add_argument("-c", "--crop", action='store_true', help="trim empty space from output")
+
     parser.add_argument("-d", "--asset_directory", type=Path, help="directory called 'AssetBundles' containing all client assets")
     parser.add_argument("-f", "--face_name", type=str, default="", help="the name of the face assetbundle file")
     parser.add_argument("-t", "--face_type", type=str, default="0", help="the type/id of the face")
@@ -171,7 +174,7 @@ def main(): # copied from nobbyfix's script; todo: clean up and improve
     # else:
     # 	asset_dir = open_dir_dialog()
 
-    painting_name = args.painting_name
+    # painting_name = args.painting_name
     # if painting_name:
     # 	painting_subpath = Path("painting", painting_name)
     # else:
@@ -194,7 +197,7 @@ def main(): # copied from nobbyfix's script; todo: clean up and improve
     # result = create_image(asset, faceimg)
     # # result = downscale_image(result)
     # result.save(targetpath)
-    wrapped(painting_name)
+    wrapped(args.painting_name, args.crop)
 
 if __name__ == "__main__":
     main()
