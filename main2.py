@@ -134,22 +134,22 @@ def wrapped(painting_name):
                 int((layer['box'][3] - layer['box'][1]) * (truesize[1] / layer['size']['y']))
             )).transpose(Image.Transpose.FLIP_TOP_BOTTOM)
             master.alpha_composite(scaled_flipped_canvas, (int(layer['box'][0]), int(layer['box'][1])))
-            flip = True
         elif 'texture' in layer: # no mesh found
-            unflipped_master = layer['texture'].image
-            flip = False
-    if flip:
-        unflipped_master = master.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
+            scaled_flipped_texture = layer['texture'].image.resize(master.size).transpose(Image.Transpose.FLIP_TOP_BOTTOM)
+            master.alpha_composite(scaled_flipped_texture)
+    unflipped_master = master.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
     # unflipped_master.show()
 
-    def downscale(im):
-        dmax = max(im.size)
+    def trim_and_downscale(im):
+        bbox = im.getbbox()
+        imtrim = im.crop(bbox)
+        dmax = max(imtrim.size)
         if dmax > 2048:
-            return im.resize([round(d * 2048 / dmax) for d in im.size])
-        return im
+            return imtrim.resize([round(d * 2048 / dmax) for d in imtrim.size])
+        return imtrim
 
     mkdir('output2')
-    unflipped_master = downscale(unflipped_master)
+    unflipped_master = trim_and_downscale(unflipped_master)
     unflipped_master.save('output2/{}.png'.format(name))
 
 def main(): # copied from nobbyfix's script; todo: clean up and improve

@@ -1,4 +1,5 @@
 *.pyc
+*.png
 input/**
 !input/painting
 !input/painting/aijiang
