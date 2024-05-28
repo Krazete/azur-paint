@@ -4,7 +4,7 @@
 
 Builds sprites from the jumbled Texture2Ds and Meshes available in the `AssetBundles/painting` folder. Also requires the `AssetBundles/dependencies` file. These are both located within `Android/data/com.YoStarEN.AzurLane/files`.
 
-![azur-paint diagram(azur-paint.svg "made with draw.io")
+![azur-paint diagram](azur-paint.svg "made with draw.io")
 
 This repo was inspired by:
 
