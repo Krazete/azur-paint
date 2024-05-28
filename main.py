@@ -134,6 +134,10 @@ def rebuild_sprite(name, show=False, save=True, save_intermediate=False):
             v, vt = get_vertices(mesh, texture, save_intermediate)
             patches = get_patches(texture, vt, save_intermediate)
             canvas = get_canvas(v, size)
+            try:
+                canvas = canvas[0]
+            except:
+                pass
             stitch_patches(canvas, patches, v, mesh)
         elif texture:
             canvas = texture.image
@@ -193,17 +197,28 @@ def paste_face(name, canvas, face, anchor, show=False, save=True):
         copy.save('output/expressions/{}-{}.png'.format(name, face.name))
 
 if __name__ == '__main__':
-    info, kit, canvas = rebuild_sprite('aijiang', save_intermediate=True)
-    faces = get_faces('tbniang')
+    from argparse import ArgumentParser
+    parser = ArgumentParser()
+    parser.add_argument("-p", "--painting_name", type=str, help="the prefix of the tex file")
+    args = parser.parse_args()
+    info, kit, canvas = rebuild_sprite(args.painting_name, save_intermediate=True)
 
-    for root, dirs, files in os.walk("input/painting"):
-        for file in files:
-            if file.startswith('vtuber') and file.endswith('_tex'):
-                info, kit, canvas = rebuild_sprite(file[:-4])
+    # info, kit, canvas = rebuild_sprite('missd', save_intermediate=True)
+    # info, kit, canvas = rebuild_sprite('missd_bj', save_intermediate=True)
+    # info, kit, canvas = rebuild_sprite('missd_rw', save_intermediate=True)
+    # info, kit, canvas = rebuild_sprite('unknown6', save_intermediate=True)
 
-    name = 'unknown3' # purifier
-    info, kit, canvas = rebuild_sprite(name, save=False)
-    faces = get_faces(name, save=False)
-    anchor = get_face_anchor(info)
-    for face in faces:
-        paste_face(name, canvas, face, anchor)
+    # info, kit, canvas = rebuild_sprite('aijiang', save_intermediate=True)
+    # faces = get_faces('tbniang')
+
+    # for root, dirs, files in os.walk("input/painting"):
+    #     for file in files:
+    #         if file.startswith('vtuber') and file.endswith('_tex'):
+    #             info, kit, canvas = rebuild_sprite(file[:-4])
+
+    # name = 'unknown3' # purifier
+    # info, kit, canvas = rebuild_sprite(name, save=False)
+    # faces = get_faces(name, save=False)
+    # anchor = get_face_anchor(info)
+    # for face in faces:
+    #     paste_face(name, canvas, face, anchor)
