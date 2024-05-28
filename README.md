@@ -1,5 +1,6 @@
 # Azur Lane Painting Reconstruction
 
+> Note: The 2024-05-16 update messed everything up. Single-layer sprites seem okay, but multi-layer sprites' positioning is all wrong. Idk how soon I'll be able to fix it.
 
 Builds sprites from the jumbled Texture2Ds and Meshes available in the `AssetBundles/painting` folder. Also requires the `AssetBundles/dependencies` file. These are both located within `Android/data/com.YoStarEN.AzurLane/files`.
 
@@ -8,7 +9,7 @@ This repo was inspired by:
 * [AzurLane-Painting-Tool](https://github.com/Scighost/AzurLane-Painting-Tool/blob/6d6301257a558d9dbde4a65e4cf25650fca797c8/AzurLane-Painting-Tool/PaintingInfo.cs#L260) by [Scighost](https://github.com/Scighost)
 * [painting_reconstruct.py](https://gist.github.com/nobbyfix/fb535462acc897ab1f39e5e9981e4645) by [nobbyfix](https://github.com/nobbyfix)
 
-My `main2.py` script is more accurate by considering the mesh's `m_LocalAABB` property and its `m_Center` and `m_Extent` values. These values indicate the location of each sprite piece relative to their bounding box.
+~~My `main2.py` script is more accurate by considering the mesh's `m_LocalAABB` property and its `m_Center` and `m_Extent` values. These values indicate the location of each sprite piece relative to their bounding box.~~ (not anymore, see note up top)
 
 ## Usage
 
