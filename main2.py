@@ -1,6 +1,5 @@
 from main import *
 from pathlib import Path
-from argparse import ArgumentParser
 
 def get_primary(asset):
     # Returns typetree of the primary asset (as reported by the AssetBundle).
@@ -66,12 +65,16 @@ def wrapped(painting_name, out_file, crop, keep):
                 child_id = rt['m_GameObject']['m_PathID']
                 get_layers(asset, layers, child_id, id)
 
+    ################################################################
+    # todo: check and delete (patch 2024-05-16 changed everything)
+    ################################################################
     # oddity: jiahe_3-5 output jiahe_6 for some reason
     #         also linghangyuan33_1 (TBPeppy) outputs linghangyuan33_2 (TBPeppySchool)
     #         in these cases, use https://github.com/Krazete/azur-paint/blob/c7689d/main.py
     #                         and maybe change line 101
     #                        from return Image.new('RGBA', size)
     #                          to return Image.new('RGBA', (dx, dy))
+    ################################################################
 
     # painting_name = 'shaenhuosite_alter'
     # painting_name = 'makeboluo'
@@ -175,6 +178,7 @@ def wrapped(painting_name, out_file, crop, keep):
     unflipped_master.save('output2/{}.png'.format(name))
 
 if __name__ == '__main__':
+    from argparse import ArgumentParser
     parser = ArgumentParser()
     parser.add_argument('-p', '--painting_name', type=str, help='name of painting assetbundle file(s) (separate multiple by commas)')
     parser.add_argument('-k', '--keep_original', action='store_true', help='save full resolution sprite too')
@@ -187,8 +191,14 @@ if __name__ == '__main__':
     #     parentdirname = tk.filedialog.askdirectory(initialdir='', title='Select asset directory (the parent folder of painting)')
     if not args.painting_name:
         import tkinter as tk
+        from tkinter import filedialog
         scapegoat= tk.Tk()
         scapegoat.withdraw()
-        assetfilename = tk.filedialog.askopenfilename(initialdir='input/painting', title='Select painting asset file (the file in painting not ending in _tex)')
+        assetfilename = filedialog.askopenfilename(initialdir='input/painting', title='Select painting asset file (the file in painting not ending in _tex)')
+        args.painting_name = assetfilename.split('/')[-1]
 
-    wrapped(args.painting_name, args.out_file, args.crop, args.keep_original)
+    if ',' in args.painting_name:
+        for painting_name in args.painting_name.split(','):
+            wrapped(painting_name, args.out_file, args.crop, args.keep_original)
+    else:
+        wrapped(args.painting_name, args.out_file, args.crop, args.keep_original)
