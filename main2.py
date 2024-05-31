@@ -2,7 +2,7 @@ from main import *
 from pathlib import Path
 from argparse import ArgumentParser
 
-def wrapped(painting_name, crop):
+def wrapped(painting_name, out_file, crop, keep):
     def get_layers(asset, layers={}, id=None, parent=None):
         if id is None:
             for value in asset.values():
@@ -58,15 +58,14 @@ def wrapped(painting_name, crop):
     #                        from return Image.new('RGBA', size)
     #                          to return Image.new('RGBA', (dx, dy))
 
-    # name = 'shaenhuosite_alter'
-    # name = 'makeboluo'
-    # name = 'tower'
-    # name = 'adaerbote_2'
-    # name = 'ankeleiqi'
-    # name = 'kelaimengsuo'
-    name = painting_name
-    # name = 'buleisite_2'
-    env = UnityPy.load('input/painting/{}'.format(name))
+    # painting_name = 'shaenhuosite_alter'
+    # painting_name = 'makeboluo'
+    # painting_name = 'tower'
+    # painting_name = 'adaerbote_2'
+    # painting_name = 'ankeleiqi'
+    # painting_name = 'kelaimengsuo'
+    # painting_name = 'buleisite_2'
+    env = UnityPy.load('input/painting/{}'.format(painting_name))
     layers = {}
     get_layers(env.assets[0], layers) # keys ordered bottom to top
 
@@ -150,54 +149,31 @@ def wrapped(painting_name, crop):
         return im
 
     os.makedirs('output2', exist_ok=True)
+    if out_file:
+        name = out_file # todo: sanitize
+    else:
+        name = painting_name
+    if keep:
+        os.makedirs('output2/original', exist_ok=True)
+        unflipped_master.save('output2/original/{}.png'.format(name))
     unflipped_master = crop_and_downscale(unflipped_master, crop)
     unflipped_master.save('output2/{}.png'.format(name))
 
-def main(): # copied from nobbyfix's script; todo: clean up and improve
-    # create argument parser
+if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument("-p", "--painting_name", type=str, help="the name of the painting assetbundle file")
-    parser.add_argument("-c", "--crop", action='store_true', help="trim empty space from output")
-
-    parser.add_argument("-d", "--asset_directory", type=Path, help="directory called 'AssetBundles' containing all client assets")
-    parser.add_argument("-f", "--face_name", type=str, default="", help="the name of the face assetbundle file")
-    parser.add_argument("-t", "--face_type", type=str, default="0", help="the type/id of the face")
-    parser.add_argument("-o", "--out_file", type=Path, help="the output filename")
+    parser.add_argument('-p', '--painting_name', type=str, help='name of painting assetbundle file(s) (separate multiple by commas)')
+    parser.add_argument('-k', '--keep_original', action='store_true', help='save full resolution sprite too')
+    parser.add_argument('-c', '--crop', action='store_true', help='trim empty space from output')
+    parser.add_argument('-o', '--out_file', type=Path, help='the output filename')
     args = parser.parse_args()
+    print(args)
 
-    # create useful paths
-    # asset_dir = args.asset_directory
-    # if asset_dir:
-    # 	pass
-    # 	# if asset_dir.name != "AssetBundles":
-    # 		# raise ValueError("The asset directory needs to be named 'AssetBundles'!")
-    # else:
-    # 	asset_dir = open_dir_dialog()
+    # if not args.asset_directory: # not needed? can be determined from painting asset file location
+    #     parentdirname = tk.filedialog.askdirectory(initialdir='', title='Select asset directory (the parent folder of painting)')
+    if not args.painting_name:
+        import tkinter as tk
+        scapegoat= tk.Tk()
+        scapegoat.withdraw()
+        assetfilename = tk.filedialog.askopenfilename(initialdir='input/painting', title='Select painting asset file (the file in painting not ending in _tex)')
 
-    # painting_name = args.painting_name
-    # if painting_name:
-    # 	painting_subpath = Path("painting", painting_name)
-    # else:
-    # 	painting_fullpath = open_file_dialog(asset_dir)
-    # 	painting_subpath = painting_fullpath.relative_to(asset_dir)
-
-    # targetpath = args.out_file or Path(painting_subpath.name + ".png")
-
-    # # load painting asset
-    # asset = AzurlaneAsset(asset_dir, painting_subpath)
-    # asset.loadDependencies()
-
-    # # get faceimage if required
-    # face_name = args.face_name
-    # faceimg = None
-    # if face_name:
-    # 	faceimg = get_face_image(args.face_name, args.face_type, asset_dir)
-
-    # # create image, transform it and save
-    # result = create_image(asset, faceimg)
-    # # result = downscale_image(result)
-    # result.save(targetpath)
-    wrapped(args.painting_name, args.crop)
-
-if __name__ == "__main__":
-    main()
+    wrapped(args.painting_name, args.out_file, args.crop, args.keep_original)
