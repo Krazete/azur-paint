@@ -149,7 +149,7 @@ def wrapped(painting_name, crop):
             return im.resize([round(d * 2048 / dmax) for d in im.size])
         return im
 
-    mkdir('output2')
+    os.makedirs('output2', exist_ok=True)
     unflipped_master = crop_and_downscale(unflipped_master, crop)
     unflipped_master.save('output2/{}.png'.format(name))
 

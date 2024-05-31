@@ -2,22 +2,6 @@ import os
 import UnityPy
 from PIL import Image
 
-def split(path):
-    'Split a pathname fully by all slashes.'
-    a, b = os.path.split(path)
-    if a == '':
-        return [b]
-    return split(a) + [b]
-
-def mkdir(path):
-    'Make directory and all parent directories if they do not exist.'
-    lineage = split(path)
-    pathname = ''
-    for subpath in lineage:
-        pathname = os.path.join(pathname, subpath)
-        if not os.path.exists(pathname):
-            os.mkdir(pathname)
-
 def check_unique(array, label):
     if len(array) < 1:
         print('  No {} found.'.format(label))
@@ -70,7 +54,7 @@ def get_vertices(mesh, texture, save=False):
     h = texture.image.height
     vt = [(w * x, h - h * y) for x, y in vt_raw]
     if save:
-        mkdir('output/intermediate')
+        os.makedirs('output/intermediate', exist_ok=True)
         if mesh:
             with open('output/intermediate/{}.obj'.format(mesh.name), 'w', newline='') as file:
                 file.write(mesh.export())
@@ -90,7 +74,7 @@ def get_patches(texture, vt, save=False):
         ymax = max(y for x, y in vt[a:b])
         patch = texture.image.crop((xmin, ymin, xmax, ymax))
         if save:
-            mkdir('output/intermediate/{}'.format(texture.name))
+            os.makedirs('output/intermediate/{}'.format(texture.name), exist_ok=True)
             patch.save('output/intermediate/{}/{:03d}.png'.format(texture.name, i))
         patches.append(patch)
     return patches
@@ -148,7 +132,7 @@ def rebuild_sprite(name, show=False, save=True, save_intermediate=False):
         if show:
             canvas.show()
         if save:
-            mkdir('output')
+            os.makedirs('output', exist_ok=True)
             canvas.save('output/{}.png'.format(name))
     return info, kit, canvas
 
@@ -160,7 +144,7 @@ def get_faces(name, save=True):
             if value.type.name == 'Texture2D':
                 faces.append(value.read())
     if save:
-        mkdir('output/faces')
+        os.makedirs('output/faces', exist_ok=True)
         for face in faces:
             face.image.save('output/faces/{}-{}.png'.format(name, face.name))
     return faces
@@ -193,7 +177,7 @@ def paste_face(name, canvas, face, anchor, show=False, save=True):
     if show:
         copy.show()
     if save:
-        mkdir('output/expressions')
+        os.makedirs('output/expressions', exist_ok=True)
         copy.save('output/expressions/{}-{}.png'.format(name, face.name))
 
 if __name__ == '__main__':
