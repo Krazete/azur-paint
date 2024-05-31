@@ -2,15 +2,30 @@ from main import *
 from pathlib import Path
 from argparse import ArgumentParser
 
+def get_primary(asset):
+    # Returns typetree of the primary asset (as reported by the AssetBundle).
+    bundle = asset.objects[1] # m_PathID is always 1 for the AssetBundle
+    if bundle.type.name != 'AssetBundle': # in case the above isn't true
+        print('Object at m_PathID=1 is not an AssetBundle.\nSearching for AssetBundle...')
+        found = False
+        for value in asset.values():
+            if value.type.name == 'AssetBundle':
+                bundle = value
+                print('AssetBundle found at m_PathID=', bundle.path_id, '.', sep='')
+                found = True
+                break
+        assert found, 'No AssetBundle found.'
+    bundletree = bundle.read_typetree()
+    primaryid = bundletree['m_Container'][0][1]['asset']['m_PathID']
+    primary = asset.objects[primaryid]
+    return primary.read_typetree()
+
 def wrapped(painting_name, out_file, crop, keep):
     def get_layers(asset, layers={}, id=None, parent=None):
         if id is None:
-            for value in asset.values():
-                if value.type.name == 'AssetBundle':
-                    bundle = value.read_typetree()
-            id = bundle['m_Container'][0][1]['asset']['m_PathID']
-        print(id)
-        gameobject = asset[id].read_typetree()
+            gameobject = get_primary(asset)
+        else:
+            gameobject = asset[id].read_typetree()
 
         children = None
         mesh_id = None
