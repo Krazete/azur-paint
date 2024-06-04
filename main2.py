@@ -1,5 +1,6 @@
 from main import *
 from pathlib import Path
+import re
 
 root = Path('AssetBundles')
 
@@ -21,52 +22,71 @@ def get_primary(asset):
     primary = asset.objects[primaryid]
     return primary.read_typetree()
 
+def get_dependencies():
+    # Returns dependency map linking asset files to their texture files.
+    env = UnityPy.load(str(Path(root, 'dependencies')))
+    primary = get_primary(env.assets[0])
+    dependencies = {}
+    for m_Value in primary['m_Values']:
+        m_FileName = re.sub('^.*?(/painting/.*)?$', '\g<1>', m_Value['m_FileName'])[1:]
+        # m_FileName = re.sub('^.*?(/painting(?:face)?/.*)?$', '\g<1>', m_Value['m_FileName'])[1:] # includes paintingface
+        if m_FileName:
+            if m_FileName.endswith('_tex'):
+                if m_Value['m_Dependencies']:
+                    print('Texture file includes dependencies:',  m_FileName)
+            elif not m_Value['m_Dependencies']:
+                print('Non-texture file without dependencies:', m_FileName)
+            dependencies.setdefault(m_FileName, m_Value['m_Dependencies'])
+    return dependencies
+
+def get_layers(asset, textures, layers={}, id=None, parent=None):
+    if id is None:
+        gameobject = get_primary(asset)
+    else:
+        gameobject = asset[id].read_typetree()
+
+    children = None
+    mesh_id = None
+    entry = {}
+    for ptr in gameobject['m_Component']:
+        component_id = ptr['component']['m_PathID']
+        component = asset[component_id]
+        tree = component.read_typetree()
+        if component.type.name == 'RectTransform':
+            entry['position'] = tree['m_LocalPosition']
+            entry['scale'] = tree['m_LocalScale']
+            entry['delta'] = tree['m_SizeDelta']
+            entry['pivot'] = tree['m_Pivot']
+            children = tree['m_Children']
+        if 'mMesh' in tree:
+            mesh_id = tree['mMesh']['m_PathID']
+            sprite_id = tree['m_Sprite']['m_PathID']
+            entry['size'] = tree['mRawSpriteSize']
+    if mesh_id is not None:
+        texas = {}
+        for i in range(len(textures.assets)): # todo: remake this as a function
+            texas = texas | textures.assets[i].objects
+        try:
+            entry['mesh'] = texas[mesh_id].read()
+        except:
+            print('No mesh found.')
+        sprite = texas[sprite_id].read_typetree()
+        texture_id = sprite['m_RD']['texture']['m_PathID']
+        print('txt', texture_id)
+        entry['texture'] = texas[texture_id].read()
+    if parent is not None:
+        entry['parent'] = parent
+
+    layers[id] = entry
+
+    if children is not None:
+        for rt_ptr in children:
+            rt_id = rt_ptr['m_PathID']
+            rt = asset[rt_id].read_typetree()
+            child_id = rt['m_GameObject']['m_PathID']
+            get_layers(asset, textures, layers, child_id, id)
+
 def wrapped(painting_name, out_file, crop, keep):
-    def get_layers(asset, layers={}, id=None, parent=None):
-        if id is None:
-            gameobject = get_primary(asset)
-        else:
-            gameobject = asset[id].read_typetree()
-
-        children = None
-        mesh_id = None
-        entry = {}
-        for ptr in gameobject['m_Component']:
-            component_id = ptr['component']['m_PathID']
-            component = asset[component_id]
-            tree = component.read_typetree()
-            if component.type.name == 'RectTransform':
-                entry['position'] = tree['m_LocalPosition']
-                entry['scale'] = tree['m_LocalScale']
-                entry['delta'] = tree['m_SizeDelta']
-                entry['pivot'] = tree['m_Pivot']
-                children = tree['m_Children']
-            if 'mMesh' in tree:
-                mesh_id = tree['mMesh']['m_PathID']
-                sprite_id = tree['m_Sprite']['m_PathID']
-                entry['size'] = tree['mRawSpriteSize']
-        if mesh_id is not None:
-            tex = UnityPy.load('input/painting/{}_tex'.format(gameobject['m_Name']))
-            texas = tex.assets[0]
-            try:
-                entry['mesh'] = texas[mesh_id].read()
-            except:
-                print('No mesh found.')
-            sprite = texas[sprite_id].read_typetree()
-            texture_id = sprite['m_RD']['texture']['m_PathID']
-            entry['texture'] = texas[texture_id].read()
-        if parent is not None:
-            entry['parent'] = parent
-
-        layers[id] = entry
-
-        if children is not None:
-            for rt_ptr in children:
-                rt_id = rt_ptr['m_PathID']
-                rt = asset[rt_id].read_typetree()
-                child_id = rt['m_GameObject']['m_PathID']
-                get_layers(asset, layers, child_id, id)
-
     ################################################################
     # todo: check and delete (patch 2024-05-16 changed everything)
     ################################################################
@@ -85,9 +105,13 @@ def wrapped(painting_name, out_file, crop, keep):
     # painting_name = 'ankeleiqi'
     # painting_name = 'kelaimengsuo'
     # painting_name = 'buleisite_2'
+
+    depmap = get_dependencies()
+    textures = UnityPy.load(*['{}/{}'.format(root, fn) for fn in depmap['painting/{}'.format(painting_name)]])
+
     env = UnityPy.load(str(Path(root, 'painting', painting_name)))
     layers = {}
-    get_layers(env.assets[0], layers) # keys ordered bottom to top
+    get_layers(env.assets[0], textures, layers) # keys ordered bottom to top
 
     for i in layers: # todo: find a better way to search for the base layer
         layer = layers[i]
