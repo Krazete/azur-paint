@@ -1,6 +1,8 @@
 from main import *
 from pathlib import Path
 
+root = Path('AssetBundles')
+
 def get_primary(asset):
     # Returns typetree of the primary asset (as reported by the AssetBundle).
     bundle = asset.objects[1] # m_PathID is always 1 for the AssetBundle
@@ -83,7 +85,7 @@ def wrapped(painting_name, out_file, crop, keep):
     # painting_name = 'ankeleiqi'
     # painting_name = 'kelaimengsuo'
     # painting_name = 'buleisite_2'
-    env = UnityPy.load('input/painting/{}'.format(painting_name))
+    env = UnityPy.load(str(Path(root, 'painting', painting_name)))
     layers = {}
     get_layers(env.assets[0], layers) # keys ordered bottom to top
 
@@ -180,25 +182,29 @@ def wrapped(painting_name, out_file, crop, keep):
 if __name__ == '__main__':
     from argparse import ArgumentParser
     parser = ArgumentParser()
-    parser.add_argument('-p', '--painting_name', type=str, help='name of painting assetbundle file(s) (separate multiple by commas)')
-    parser.add_argument('-k', '--keep_original', action='store_true', help='save full resolution sprite too')
+    parser.add_argument('-p', '--painting_name', type=str, default='', help='name of painting assetbundle file(s) (separate by colons)')
+    parser.add_argument("-d", "--asset_directory", type=Path, default=Path('AssetBundles'), help='directory containing all client assets')
+    parser.add_argument('-o', '--out_file', type=str, default='', help='output filename(s) (separate by colons)')
     parser.add_argument('-c', '--crop', action='store_true', help='trim empty space from output')
-    parser.add_argument('-o', '--out_file', type=Path, help='the output filename')
+    parser.add_argument('-k', '--keep_original', action='store_true', help='save full resolution sprite too')
     args = parser.parse_args()
-    print(args)
 
-    # if not args.asset_directory: # not needed? can be determined from painting asset file location
-    #     parentdirname = tk.filedialog.askdirectory(initialdir='', title='Select asset directory (the parent folder of painting)')
     if not args.painting_name:
         import tkinter as tk
         from tkinter import filedialog
         scapegoat= tk.Tk()
         scapegoat.withdraw()
-        assetfilename = filedialog.askopenfilename(initialdir='input/painting', title='Select painting asset file (the file in painting not ending in _tex)')
+        assetfilename = filedialog.askopenfilename(
+            initialdir=Path(args.asset_directory, 'painting'),
+            title='Select asset file (a /painting/ file not ending in _tex)'
+        )
+        args.asset_directory = Path('/', *assetfilename.split('/')[1:-2]) # C drive only
         args.painting_name = assetfilename.split('/')[-1]
 
-    if ',' in args.painting_name:
-        for painting_name in args.painting_name.split(','):
-            wrapped(painting_name, args.out_file, args.crop, args.keep_original)
+    root = args.asset_directory
+
+    if ':' in args.painting_name or ':' in args.out_file:
+        for painting_name, out_file in zip(args.painting_name.split(':'), args.out_file.split(':')):
+            wrapped(painting_name, out_file, args.crop, args.keep_original)
     else:
         wrapped(args.painting_name, args.out_file, args.crop, args.keep_original)
