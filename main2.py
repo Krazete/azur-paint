@@ -20,12 +20,12 @@ def get_primary(asset):
     bundletree = bundle.read_typetree()
     primaryid = bundletree['m_Container'][0][1]['asset']['m_PathID']
     primary = asset.objects[primaryid]
-    return primary.read_typetree()
+    return primaryid, primary.read_typetree()
 
 def get_dependencies():
     # Returns dependency map linking asset files to their texture files.
     env = UnityPy.load(str(Path(root, 'dependencies')))
-    primary = get_primary(env.assets[0])
+    id, primary = get_primary(env.assets[0])
     dependencies = {}
     for m_Value in primary['m_Values']:
         m_FileName = re.sub('^.*?(/painting/.*)?$', '\g<1>', m_Value['m_FileName'])[1:]
@@ -41,7 +41,7 @@ def get_dependencies():
 
 def get_layers(asset, textures, layers={}, id=None, parent=None):
     if id is None:
-        gameobject = get_primary(asset)
+        id, gameobject = get_primary(asset)
     else:
         gameobject = asset[id].read_typetree()
 
@@ -53,10 +53,39 @@ def get_layers(asset, textures, layers={}, id=None, parent=None):
         component = asset[component_id]
         tree = component.read_typetree()
         if component.type.name == 'RectTransform':
-            entry['position'] = tree['m_LocalPosition']
+            entry['position'] = tree['m_LocalPosition'] # unused; inaccurate as of 2024-05-16
             entry['scale'] = tree['m_LocalScale']
             entry['delta'] = tree['m_SizeDelta']
             entry['pivot'] = tree['m_Pivot']
+
+            # calculate true m_LocalPosition
+            anchormin = tree['m_AnchorMin']
+            anchormax = tree['m_AnchorMax']
+            anchorpos = tree['m_AnchoredPosition']
+            if parent is None:
+                entry['bound'] = entry['delta']
+                entry['anchor'] = {
+                    'x': entry['delta']['x'] * entry['pivot']['x'],
+                    'y': entry['delta']['y'] * entry['pivot']['y']
+                }
+                entry['position'] = anchorpos
+            else:
+                pl = layers[parent]
+                entry['bound'] = { # bounding box width and height
+                    'x': pl['bound']['x'] * (anchormax['x'] - anchormin['x']) + entry['delta']['x'],
+                    'y': pl['bound']['y'] * (anchormax['y'] - anchormin['y']) + entry['delta']['y']
+                }
+                entry['anchor'] = { # bounding box anchor in relation to box corner
+                    'x': (entry['bound']['x'] - entry['delta']['x']) * entry['pivot']['x'] + pl['bound']['x'] * anchormin['x'],
+                    'y': (entry['bound']['y'] - entry['delta']['y']) * entry['pivot']['y'] + pl['bound']['y'] * anchormin['y']
+                }
+                entry['position'] = { # anchor in relation to parent anchor
+                    'x': entry['anchor']['x'] - pl['anchor']['x'] + anchorpos['x'],
+                    'y': entry['anchor']['y'] - pl['anchor']['y'] + anchorpos['y']
+                }
+            # print(id, parent)
+            # print(entry['bound'], entry['anchor'], entry['position'])
+
             children = tree['m_Children']
         if 'mMesh' in tree:
             mesh_id = tree['mMesh']['m_PathID']
