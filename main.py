@@ -109,9 +109,9 @@ def stitch_patches(canvas, patches, v, mesh):
 
 def rebuild_sprite(name, show=False, save=True, save_intermediate=False):
     print(name)
-    info = UnityPy.load('input/painting/{}'.format(name))
+    info = UnityPy.load('AssetBundles/painting/{}'.format(name))
     size = get_size(info)
-    kit = UnityPy.load('input/painting/{}_tex'.format(name))
+    kit = UnityPy.load('AssetBundles/painting/{}_tex'.format(name))
     for asset in kit.assets:
         mesh, texture = get_mesh_and_texture(asset)
         if mesh and texture:
@@ -137,7 +137,7 @@ def rebuild_sprite(name, show=False, save=True, save_intermediate=False):
     return info, kit, canvas
 
 def get_faces(name, save=True):
-    kit = UnityPy.load('input/paintingface/{}'.format(name))
+    kit = UnityPy.load('AssetBundles/paintingface/{}'.format(name))
     faces = []
     for asset in kit.assets:
         for value in asset.values():
@@ -195,7 +195,7 @@ if __name__ == '__main__':
     # info, kit, canvas = rebuild_sprite('aijiang', save_intermediate=True)
     # faces = get_faces('tbniang')
 
-    # for root, dirs, files in os.walk("input/painting"):
+    # for root, dirs, files in os.walk("AssetBundles/painting"):
     #     for file in files:
     #         if file.startswith('vtuber') and file.endswith('_tex'):
     #             info, kit, canvas = rebuild_sprite(file[:-4])
