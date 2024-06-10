@@ -143,6 +143,7 @@ def wrapped(painting_name, out_file, crop, keep, facename, facetype):
     textures = UnityPy.load(*['{}/{}'.format(root, fn) for fn in depmap['painting/{}'.format(painting_name)]])
 
     # face stuff
+    face = None
     if facename != None:
         faces = UnityPy.load(str(Path(root, 'paintingface', facename)))
         for value in faces.assets[0].values():
