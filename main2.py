@@ -227,8 +227,8 @@ def wrapped(painting_name, out_file, crop, keep, facename, facetype):
             else:
                 scaled_flipped_texture = layer['texture'].image.resize(master.size).transpose(Image.Transpose.FLIP_TOP_BOTTOM)
             master.alpha_composite(scaled_flipped_texture, (
-                int(layer['position']['x'] - layer['bound']['x']/2 - x0), # position face
-                int(layer['position']['y'] - layer['bound']['y']/2 - y0)
+                int(layer['position']['x'] - layer['bound']['x'] * layer['pivot']['x'] - x0), # position face
+                int(layer['position']['y'] - layer['bound']['y'] * layer['pivot']['y'] - y0)
             ))
     unflipped_master = master.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
     # unflipped_master.show()
