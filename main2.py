@@ -39,7 +39,7 @@ def get_dependencies():
             dependencies.setdefault(m_FileName, m_Value['m_Dependencies'])
     return dependencies
 
-def get_layers(asset, textures, layers={}, id=None, parent=None):
+def get_layers(asset, textures, layers={}, id=None, parent=None, face=None):
     if id is None:
         id, gameobject = get_primary(asset)
     else:
@@ -86,6 +86,10 @@ def get_layers(asset, textures, layers={}, id=None, parent=None):
             # print(id, parent)
             # print(entry['bound'], entry['anchor'], entry['position'])
 
+            if gameobject['m_Name'] == 'face' and face != None: # transplant face into layers
+                entry['texture'] = face
+                print(entry)
+
             children = tree['m_Children']
         if 'mMesh' in tree:
             mesh_id = tree['mMesh']['m_PathID']
@@ -113,9 +117,9 @@ def get_layers(asset, textures, layers={}, id=None, parent=None):
             rt_id = rt_ptr['m_PathID']
             rt = asset[rt_id].read_typetree()
             child_id = rt['m_GameObject']['m_PathID']
-            get_layers(asset, textures, layers, child_id, id)
+            get_layers(asset, textures, layers, child_id, id, face)
 
-def wrapped(painting_name, out_file, crop, keep):
+def wrapped(painting_name, out_file, crop, keep, facename, facetype):
     ################################################################
     # todo: check and delete (patch 2024-05-16 changed everything)
     ################################################################
@@ -138,9 +142,18 @@ def wrapped(painting_name, out_file, crop, keep):
     depmap = get_dependencies()
     textures = UnityPy.load(*['{}/{}'.format(root, fn) for fn in depmap['painting/{}'.format(painting_name)]])
 
+    # face stuff
+    if facename != None:
+        faces = UnityPy.load(str(Path(root, 'paintingface', facename)))
+        for value in faces.assets[0].values():
+            if value.type.name == 'Texture2D':
+                face = value.read()
+                if face.name == facetype:
+                    break
+
     env = UnityPy.load(str(Path(root, 'painting', painting_name)))
     layers = {}
-    get_layers(env.assets[0], textures, layers) # keys ordered bottom to top
+    get_layers(env.assets[0], textures, layers, face=face) # keys ordered bottom to top
 
     for i in layers: # todo: find a better way to search for the base layer
         layer = layers[i]
@@ -207,8 +220,15 @@ def wrapped(painting_name, out_file, crop, keep):
             )).transpose(Image.Transpose.FLIP_TOP_BOTTOM)
             master.alpha_composite(scaled_flipped_canvas, (int(layer['box'][0]), int(layer['box'][1])))
         elif 'texture' in layer: # no mesh found
-            scaled_flipped_texture = layer['texture'].image.resize(master.size).transpose(Image.Transpose.FLIP_TOP_BOTTOM)
-            master.alpha_composite(scaled_flipped_texture)
+            # todo: check if this face-specific stuff breaks other no-mesh texture scenarios that aren't faces
+            if layer['bound']: # face
+                scaled_flipped_texture = layer['texture'].image.resize((int(layer['bound']['x']), int(layer['bound']['y']))).transpose(Image.Transpose.FLIP_TOP_BOTTOM)
+            else:
+                scaled_flipped_texture = layer['texture'].image.resize(master.size).transpose(Image.Transpose.FLIP_TOP_BOTTOM)
+            master.alpha_composite(scaled_flipped_texture, (
+                int(layer['position']['x'] - layer['bound']['x']/2 - x0), # position face
+                int(layer['position']['y'] - layer['bound']['y']/2 - y0)
+            ))
     unflipped_master = master.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
     # unflipped_master.show()
 
@@ -236,6 +256,8 @@ if __name__ == '__main__':
     from argparse import ArgumentParser
     parser = ArgumentParser()
     parser.add_argument('-p', '--painting_name', type=str, default='', help='name of painting assetbundle file(s) (separate by colons)')
+    parser.add_argument('-f', '--face_name', type=str, help='paintingface name')
+    parser.add_argument('-t', '--face_type', type=str, help='paintingface index')
     parser.add_argument("-d", "--asset_directory", type=Path, default=Path('AssetBundles'), help='directory containing all client assets')
     parser.add_argument('-o', '--out_file', type=str, default='', help='output filename(s) (separate by colons)')
     parser.add_argument('-c', '--crop', action='store_true', help='trim empty space from output')
@@ -258,6 +280,6 @@ if __name__ == '__main__':
 
     if ':' in args.painting_name or ':' in args.out_file:
         for painting_name, out_file in zip(args.painting_name.split(':'), args.out_file.split(':')):
-            wrapped(painting_name, out_file, args.crop, args.keep_original)
+            wrapped(painting_name, out_file, args.crop, args.keep_original, args.face_name, args.face_type)
     else:
-        wrapped(args.painting_name, args.out_file, args.crop, args.keep_original)
+        wrapped(args.painting_name, args.out_file, args.crop, args.keep_original, args.face_name, args.face_type)
