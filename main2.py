@@ -45,6 +45,9 @@ def get_layers(asset, textures, layers={}, id=None, parent=None, face=None):
     else:
         gameobject = asset[id].read_typetree()
 
+    if gameobject['m_Name'] == 'shop_hx': # the shop_hx layer is white fog censorship
+        return
+
     children = None
     mesh_id = None
     entry = {}
@@ -88,6 +91,7 @@ def get_layers(asset, textures, layers={}, id=None, parent=None, face=None):
 
             if gameobject['m_Name'] == 'face' and face != None: # transplant face into layers
                 entry['texture'] = face
+                entry['size'] = entry['delta'] # todo: dunno if this is needed
                 print(entry)
 
             children = tree['m_Children']
@@ -228,7 +232,7 @@ def wrapped(painting_name, out_file, crop, keep, facename, facetype):
                 scaled_flipped_texture = layer['texture'].image.resize(master.size).transpose(Image.Transpose.FLIP_TOP_BOTTOM)
             master.alpha_composite(scaled_flipped_texture, (
                 int(layer['position']['x'] - layer['bound']['x'] * layer['pivot']['x'] - x0), # position face
-                int(layer['position']['y'] - layer['bound']['y'] * layer['pivot']['y'] - y0)
+                int(layer['position']['y'] - layer['bound']['y'] * layer['pivot']['y'] - y0) # todo: scale face properly (unknown4)? or is position the problem? position + scale?
             ))
     unflipped_master = master.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
     # unflipped_master.show()
