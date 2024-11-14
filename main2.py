@@ -1,6 +1,7 @@
 from main import *
 from pathlib import Path
 import re
+import math
 
 root = Path('AssetBundles')
 
@@ -90,6 +91,7 @@ def get_layers(asset, textures, layers={}, id=None, parent=None, face=None):
             # print(entry['bound'], entry['anchor'], entry['position'])
 
             if gameobject['m_Name'] == 'face' and face != None: # transplant face into layers
+                entry['isFace'] = True
                 entry['texture'] = face
                 entry['size'] = entry['delta'] # todo: dunno if this is needed
                 print(entry)
@@ -226,13 +228,16 @@ def wrapped(painting_name, out_file, crop, keep, facename, facetype):
             master.alpha_composite(scaled_flipped_canvas, (int(layer['box'][0]), int(layer['box'][1])))
         elif 'texture' in layer: # no mesh found
             # todo: check if this face-specific stuff breaks other no-mesh texture scenarios that aren't faces
-            if layer['bound']: # face
+            #       tashigan_2: bg is resized exactly the same
+            #                   so it doesn't break non-faces, but faces still need special treatment for y position (thus isFace for face detection)
+            if layer['bound'] and layer.get('isFace', False): # face
                 scaled_flipped_texture = layer['texture'].image.resize((int(layer['bound']['x']), int(layer['bound']['y']))).transpose(Image.Transpose.FLIP_TOP_BOTTOM)
+                layer['position']['y'] = math.copysign(math.ceil(abs(layer['position']['y'])), layer['position']['y']) # rounding up absolutely seems to fix face positions (tested unknown4, tashigan_2, weizhang_3)
             else:
                 scaled_flipped_texture = layer['texture'].image.resize(master.size).transpose(Image.Transpose.FLIP_TOP_BOTTOM)
             master.alpha_composite(scaled_flipped_texture, (
-                int(layer['position']['x'] - layer['bound']['x'] * layer['pivot']['x'] - x0), # position face
-                int(layer['position']['y'] - layer['bound']['y'] * layer['pivot']['y'] - y0) # todo: scale face properly (unknown4)? or is position the problem? position + scale?
+                int(layer['position']['x'] - layer['bound']['x'] * layer['pivot']['x'] - x0),
+                int(layer['position']['y'] - layer['bound']['y'] * layer['pivot']['y'] - y0)
             ))
     unflipped_master = master.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
     # unflipped_master.show()
