@@ -125,7 +125,7 @@ def get_layers(asset, textures, layers={}, id=None, parent=None, face=None):
             child_id = rt['m_GameObject']['m_PathID']
             get_layers(asset, textures, layers, child_id, id, face)
 
-def wrapped(painting_name, out_file, crop, keep, facename, facetype):
+def wrapped(painting_name, out_file, crop, keep, facename, facetype, factor):
     ################################################################
     # todo: check and delete (patch 2024-05-16 changed everything)
     ################################################################
@@ -242,13 +242,19 @@ def wrapped(painting_name, out_file, crop, keep, facename, facetype):
     unflipped_master = master.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
     # unflipped_master.show()
 
-    def crop_and_downscale(im, crop):
+    def crop_and_downscale(im, crop, factor='maxsize'):
         if crop:
             bbox = im.getbbox()
             im = im.crop(bbox)
-        dmax = max(im.size)
-        if dmax > 2048:
-            return im.resize([round(d * 2048 / dmax) for d in im.size])
+        if factor == 'pixelcount':
+            pixels = im.width * im.height
+            maxpixels = 2048 * 2048
+            if pixels > maxpixels:
+                return im.resize([round(d * math.sqrt(maxpixels / pixels)) for d in im.size])
+        else:
+            dmax = max(im.size)
+            if dmax > 2048:
+                return im.resize([round(d * 2048 / dmax) for d in im.size])
         return im
 
     os.makedirs('output2', exist_ok=True)
@@ -259,7 +265,7 @@ def wrapped(painting_name, out_file, crop, keep, facename, facetype):
     if keep:
         os.makedirs('output2/original', exist_ok=True)
         unflipped_master.save('output2/original/{}.png'.format(name))
-    unflipped_master = crop_and_downscale(unflipped_master, crop)
+    unflipped_master = crop_and_downscale(unflipped_master, crop, factor)
     unflipped_master.save('output2/{}.png'.format(name))
 
 if __name__ == '__main__':
@@ -272,6 +278,7 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--out_file', type=str, default='', help='output filename(s) (separate by colons)')
     parser.add_argument('-c', '--crop', action='store_true', help='trim empty space from output')
     parser.add_argument('-k', '--keep_original', action='store_true', help='save full resolution sprite too')
+    parser.add_argument('-s', '--scale_factor', type=str, help='downscale factor: maxsize (max(w,h) < 2048; default) or pixelcount (w*h < 2048^2)')
     args = parser.parse_args()
 
     if not args.painting_name:
@@ -290,6 +297,6 @@ if __name__ == '__main__':
 
     if ':' in args.painting_name or ':' in args.out_file:
         for painting_name, out_file in zip(args.painting_name.split(':'), args.out_file.split(':')):
-            wrapped(painting_name, out_file, args.crop, args.keep_original, args.face_name, args.face_type)
+            wrapped(painting_name, out_file, args.crop, args.keep_original, args.face_name, args.face_type, args.scale_factor)
     else:
-        wrapped(args.painting_name, args.out_file, args.crop, args.keep_original, args.face_name, args.face_type)
+        wrapped(args.painting_name, args.out_file, args.crop, args.keep_original, args.face_name, args.face_type, args.scale_factor)
