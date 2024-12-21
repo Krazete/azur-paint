@@ -75,7 +75,7 @@ def get_patches(texture, vt, save=False):
         patch = texture.image.crop((xmin, ymin, xmax, ymax))
         if save:
             os.makedirs('output/intermediate/{}'.format(texture.name), exist_ok=True)
-            patch.save('output/intermediate/{}/{:03d}.png'.format(texture.name, i))
+            patch.save('output/intermediate/{}/{:03d}.png'.format(texture.name, i)) # todo: fix for aijier_4_n (SystemError: tile cannot extend outside image)
         patches.append(patch)
     return patches
 

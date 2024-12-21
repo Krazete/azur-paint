@@ -216,8 +216,8 @@ def wrapped(painting_name, out_file, crop, keep, facename, facetype, factor):
     for i in layers:
         layer = layers[i]
         if 'mesh' in layer and 'texture' in layer:
-            v, vt = get_vertices(layer['mesh'], layer['texture'], True)
-            patches = get_patches(layer['texture'], vt, True)
+            v, vt = get_vertices(layer['mesh'], layer['texture'])
+            patches = get_patches(layer['texture'], vt)
             canvas, truesize = get_canvas(v, (int(layer['size']['x']), int(layer['size']['y'])))
             print(truesize, layer['size'])
             stitch_patches(canvas, patches, v, layer['mesh'])
