@@ -31,8 +31,8 @@ python -m main2 -p tower -s pixelcount -o "TowerBelow2048sqpx"
   * `-d`: directory name, if it isn't AssetBundles
   * `-o`: name of output file
   * `-s`: downscale factor
-    * `maxsize` (default): max(width, height) &lt; 2048
-    * `pixelcount`: width * height &lt; 2048<sup>2</sup>
+    * `maxsize` (default): max(width, height) &le; 2048
+    * `pixelcount`: width * height &le; 2048<sup>2</sup>
 * parameters that are flags:
   * `-c`: trim out whitespace
   * `-k`: output an additional version of sprite at original resolution
@@ -43,7 +43,7 @@ python -m main2 -p tower -s pixelcount -o "TowerBelow2048sqpx"
 
 ```sh
 python -m painting_reconstruct -d AssetBundles -p ankeleiqi
-python -m painting_reconstruct -d AssetBundles -p ankeleiqi -f ankeleiqi -t 2 -o AnchorageSad
+python -m painting_reconstruct -d AssetBundles -p ankeleiqi -f ankeleiqi -t 2 -o AnchorageSadFace
 ```
 
 * outputs to root folder
