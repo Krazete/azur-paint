@@ -13,9 +13,46 @@ My `main2.py` script's advantage is in its consideration of the `m_LocalAABB` pr
 
 ## Usage
 
+### main2.py
+
+```sh
+python -m main2 -p ankeleiqi
+python -m main2 -p ankeleiqi -f ankeleiqi -t 2 -o AnchorageSadFace
+python -m main2 -c -p ankeleiqi_n -o AnchorageWithoutBG
+python -m main2 -k -p tower -o "Tower's full sprite is 5212x8570 px"
+python -m main2 -p tower -s pixelcount -o "TowerBelow2048sqpx"
+```
+
+* outputs to `output2` folder
+* parameters requiring values:
+  * `-p`: name of assetbundle file in `painting` folder
+  * `-f`: name of face file in `paintingface` folder
+  * `-t`: name of face index within chosen face file
+  * `-d`: directory name, if it isn't AssetBundles
+  * `-o`: name of output file
+  * `-s`: downscale factor
+    * `maxsize` (default): max(width, height) &lt; 2048
+    * `pixelcount`: width * height &lt; 2048<sup>2</sup>
+* parameters that are flags:
+  * `-c`: trim out whitespace
+  * `-k`: output an additional version of sprite at original resolution
+
+## Other Scripts
+
+### nobbyfix's script
+
+```sh
+python -m painting_reconstruct -d AssetBundles -p ankeleiqi
+python -m painting_reconstruct -d AssetBundles -p ankeleiqi -f ankeleiqi -t 2 -o AnchorageSad
+```
+
+* outputs to root folder
+* no longer works
+  * game file structure and sprite mesh data were changed on 2024-05-21 (the Light of the Martyrium update) which broke all prior sprite extraction scripts
+
 ### main.py
 
-```py
+```sh
 python -m main -p ankeleiqi
 python -m main -p ankeleiqi_jz1
 python -m main -p ankeleiqi_jz2
@@ -24,23 +61,7 @@ python -m main -p ankeleiqi_tx3
 ```
 
 * outputs to `output` folder
-* unlike the two scripts below, the `-p` input is the name of `_tex` files minus the `_tex` (instead of the assetbundle file)
-* process one layer, not an entire sprite
+* unlike nobbyfix's script and `main2.py`, the `-p` input is the name of `_tex` files minus the `_tex` (instead of the assetbundle file)
+* processes one layer, not an entire sprite
 * doesn't consider positioning and scaling info of sprite layers
-
-### main2.py
-
-```py
-python -m main2 -p ankeleiqi
-```
-
-* outputs to `output2` folder
-
-### nobbyfix's script
-
-```py
-python -m painting_reconstruct -d "input" -p ankeleiqi
-```
-
-* outputs to root folder
-* must first replace lines 299-300 (the `asset_dir.name != "AssetBundles"` conditional) with `pass`
+* can be used instead of `main2.py` to extract a "WithoutBG" sprite even if the game doesn't have the "Hide background objects" option for that particular skin
