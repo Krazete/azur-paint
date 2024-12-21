@@ -274,7 +274,7 @@ if __name__ == '__main__':
     parser.add_argument('-p', '--painting_name', type=str, default='', help='name of painting assetbundle file(s) (separate by colons)')
     parser.add_argument('-f', '--face_name', type=str, help='paintingface name')
     parser.add_argument('-t', '--face_type', type=str, help='paintingface index')
-    parser.add_argument("-d", "--asset_directory", type=Path, default=Path('AssetBundles'), help='directory containing all client assets')
+    parser.add_argument('-d', '--asset_directory', type=Path, default=Path('AssetBundles'), help='directory containing all client assets')
     parser.add_argument('-o', '--out_file', type=str, default='', help='output filename(s) (separate by colons)')
     parser.add_argument('-c', '--crop', action='store_true', help='trim empty space from output')
     parser.add_argument('-k', '--keep_original', action='store_true', help='save full resolution sprite too')
