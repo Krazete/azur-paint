@@ -239,7 +239,9 @@ def wrapped(painting_name, out_file, crop, keep, facename, facetype, factor):
             #               adding 15 to x (absolutely) and reversing its sign
             if layer['bound'] and (face == None or layer.get('isFace', False)): # face
                 scaled_flipped_texture = layer['texture'].image.resize((int(layer['bound']['x']), int(layer['bound']['y']))).transpose(Image.Transpose.FLIP_TOP_BOTTOM)
-                layer['position']['y'] = math.copysign(math.ceil(abs(layer['position']['y'])), layer['position']['y']) # rounding up absolutely seems to fix face positions (tested unknown4, tashigan_2, weizhang_3)
+                layer['position']['y'] = math.copysign(math.ceil(abs(layer['position']['y'])), layer['position']['y'])
+                # rounding up y absolutely seems to fix face positions (works for unknown4, tashigan_2, weizhang_3)
+                #                   but sometimes messes it up instead (like with longwu_2)
             else:
                 scaled_flipped_texture = layer['texture'].image.resize(master.size).transpose(Image.Transpose.FLIP_TOP_BOTTOM)
             master.alpha_composite(scaled_flipped_texture, (
