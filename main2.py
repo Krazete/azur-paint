@@ -230,18 +230,13 @@ def wrapped(painting_name, out_file, crop, keep, facename, facetype, factor):
             # todo: check if this face-specific stuff breaks other no-mesh texture scenarios that aren't faces
             #       tashigan_2: bg is resized exactly the same
             #                   so it doesn't break non-faces, but faces still need special treatment for y position (thus isFace for face detection)
-            #       jianwu_3: 'isFace' is True for a non-face layer
-            #                 which mistakenly scales up the shipgirl layer and makes it all wonky
-            #                 the face == None condition was added to prevent this (dunno if it breaks anything)
-            #                                            doen't prevent anything if -f and t are passed tho
-            #       fubo_2: idfk; it's fixed by
-            #               subtracting 7 from y (absolutely) and then
-            #               adding 15 to x (absolutely) and reversing its sign
-            if layer['bound'] and (face == None or layer.get('isFace', False)): # face
+            #       jianwu_3: has a non-face that requires resizing with bounds like a face
+            #                 so nvm about isFace detection (hopefully this doesn't screw up bgs)
+            #       fubo_2: idfk; it's fixed with y + 6, x - 55
+            if layer['bound']: # face
                 scaled_flipped_texture = layer['texture'].image.resize((int(layer['bound']['x']), int(layer['bound']['y']))).transpose(Image.Transpose.FLIP_TOP_BOTTOM)
-                layer['position']['y'] = math.copysign(math.ceil(abs(layer['position']['y'])), layer['position']['y'])
-                # rounding up y absolutely seems to fix face positions (works for unknown4, tashigan_2, weizhang_3)
-                #                   but sometimes messes it up instead (like with longwu_2)
+                layer['position']['y'] = math.ceil(layer['position']['y'])
+                # rounding up y seems to fix face positions (works for unknown4, tashigan_2, weizhang_3)
             else:
                 scaled_flipped_texture = layer['texture'].image.resize(master.size).transpose(Image.Transpose.FLIP_TOP_BOTTOM)
             master.alpha_composite(scaled_flipped_texture, (
