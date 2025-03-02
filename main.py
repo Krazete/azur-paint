@@ -2,6 +2,9 @@ import os
 import UnityPy
 from PIL import Image
 
+def UnityPyLoad(*args):
+    return UnityPy.load(*(arg if os.path.isfile(arg) else (arg + '.ys') for arg in args))
+
 def check_unique(array, label):
     if len(array) < 1:
         print('  No {} found.'.format(label))
@@ -109,9 +112,9 @@ def stitch_patches(canvas, patches, v, mesh):
 
 def rebuild_sprite(name, show=False, save=True, save_intermediate=False):
     print(name)
-    info = UnityPy.load('AssetBundles/painting/{}'.format(name))
+    info = UnityPyLoad('AssetBundles/painting/{}'.format(name))
     size = get_size(info)
-    kit = UnityPy.load('AssetBundles/painting/{}_tex'.format(name))
+    kit = UnityPyLoad('AssetBundles/painting/{}_tex'.format(name))
     for asset in kit.assets:
         mesh, texture = get_mesh_and_texture(asset)
         if mesh and texture:
@@ -137,7 +140,7 @@ def rebuild_sprite(name, show=False, save=True, save_intermediate=False):
     return info, kit, canvas
 
 def get_faces(name, save=True):
-    kit = UnityPy.load('AssetBundles/paintingface/{}'.format(name))
+    kit = UnityPyLoad('AssetBundles/paintingface/{}'.format(name))
     faces = []
     for asset in kit.assets:
         for value in asset.values():

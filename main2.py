@@ -25,7 +25,7 @@ def get_primary(asset):
 
 def get_dependencies():
     # Returns dependency map linking asset files to their texture files.
-    env = UnityPy.load(str(Path(root, 'dependencies')))
+    env = UnityPyLoad(str(Path(root, 'dependencies')))
     id, primary = get_primary(env.assets[0])
     dependencies = {}
     for m_Value in primary['m_Values']:
@@ -146,19 +146,19 @@ def wrapped(painting_name, out_file, crop, keep, facename, facetype, factor):
     # painting_name = 'buleisite_2'
 
     depmap = get_dependencies()
-    textures = UnityPy.load(*['{}/{}'.format(root, fn) for fn in depmap['painting/{}'.format(painting_name)]])
+    textures = UnityPyLoad(*['{}/{}'.format(root, fn) for fn in depmap['painting/{}'.format(painting_name)]])
 
     # face stuff
     face = None
     if facename != None:
-        faces = UnityPy.load(str(Path(root, 'paintingface', facename)))
+        faces = UnityPyLoad(str(Path(root, 'paintingface', facename)))
         for value in faces.assets[0].values():
             if value.type.name == 'Texture2D':
                 face = value.read()
                 if face.name == facetype:
                     break
 
-    env = UnityPy.load(str(Path(root, 'painting', painting_name)))
+    env = UnityPyLoad(str(Path(root, 'painting', painting_name)))
     layers = {}
     get_layers(env.assets[0], textures, layers, face=face) # keys ordered bottom to top
 
