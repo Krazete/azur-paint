@@ -126,17 +126,6 @@ def get_layers(asset, textures, layers={}, id=None, parent=None, face=None):
             get_layers(asset, textures, layers, child_id, id, face)
 
 def wrapped(painting_name, out_file, crop, keep, facename, facetype, factor):
-    ################################################################
-    # todo: check and delete (patch 2024-05-16 changed everything)
-    ################################################################
-    # oddity: jiahe_3-5 output jiahe_6 for some reason
-    #         also linghangyuan33_1 (TBPeppy) outputs linghangyuan33_2 (TBPeppySchool)
-    #         in these cases, use https://github.com/Krazete/azur-paint/blob/c7689d/main.py
-    #                         and maybe change line 101
-    #                        from return Image.new('RGBA', size)
-    #                          to return Image.new('RGBA', (dx, dy))
-    ################################################################
-
     # painting_name = 'shaenhuosite_alter'
     # painting_name = 'makeboluo'
     # painting_name = 'tower'
