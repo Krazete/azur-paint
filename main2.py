@@ -94,7 +94,6 @@ def get_layers(asset, textures, layers={}, id=None, parent=None, face=None):
             # print(entry['bound'], entry['anchor'], entry['position'])
 
             if gameobject['m_Name'] == 'face' and face != None: # transplant face into layers
-                entry['isFace'] = True
                 entry['texture'] = face
                 entry['size'] = entry['delta'] # todo: dunno if this is needed
                 print(entry)
@@ -179,12 +178,10 @@ def wrapped(painting_name, out_file, crop, keep, facename, facetype, factor):
     # - subsq: -((sizedelta * pivot * scale - localposition) * parentscale - parentposition)
     # - also scale by total scale
 
-    from math import inf
-
-    x0 = inf
-    y0 = inf
-    x1 = -inf
-    y1 = -inf
+    x0 = math.inf
+    y0 = math.inf
+    x1 = -math.inf
+    y1 = -math.inf
     for i in layers:
         layer = layers[i]
         if 'size' in layer:
@@ -203,38 +200,41 @@ def wrapped(painting_name, out_file, crop, keep, facename, facetype, factor):
             layer['box'][2] -= x0
             layer['box'][3] -= y0
             print(layer['box'])
-    master = Image.new('RGBA', (int(x1 - x0), int(y1 - y0)))
+    master = Image.new('RGBA', (round(x1 - x0), round(y1 - y0)))
 
     for i in layers:
         layer = layers[i]
         if 'mesh' in layer and 'texture' in layer:
             v, vt = get_vertices(layer['mesh'], layer['texture'])
             patches = get_patches(layer['texture'], vt)
-            canvas, truesize = get_canvas(v, (int(layer['size']['x']), int(layer['size']['y'])))
+            canvas, truesize = get_canvas(v, (round(layer['size']['x']), round(layer['size']['y'])))
             print(truesize, layer['size'])
             stitch_patches(canvas, patches, v, layer['mesh'])
             scaled_flipped_canvas = canvas.resize((
-                int((layer['box'][2] - layer['box'][0]) * (truesize[0] / layer['size']['x'])),
-                int((layer['box'][3] - layer['box'][1]) * (truesize[1] / layer['size']['y']))
+                round((layer['box'][2] - layer['box'][0]) * (truesize[0] / layer['size']['x'])),
+                round((layer['box'][3] - layer['box'][1]) * (truesize[1] / layer['size']['y']))
             )).transpose(Image.Transpose.FLIP_TOP_BOTTOM)
-            master.alpha_composite(scaled_flipped_canvas, (int(layer['box'][0]), int(layer['box'][1])))
+            master.alpha_composite(scaled_flipped_canvas, (round(layer['box'][0]), round(layer['box'][1])))
         elif 'texture' in layer: # no mesh found
             # todo: check if this face-specific stuff breaks other no-mesh texture scenarios that aren't faces
             #       tashigan_2: bg is resized exactly the same
             #                   so it doesn't break non-faces, but faces still need special treatment for y position (thus isFace for face detection)
             #       jianwu_3: has a non-face that requires resizing with bounds like a face
             #                 so nvm about isFace detection (hopefully this doesn't screw up bgs)
-            #       fubo_2: idfk; it's fixed with y + 6, x - 55
+            #       fubo_2: the reason i found out i should use layer['box'] instead of whatever that (position - bound * pivot - origin) calculation is
+            #               fixed arbitrarily before with y + 6, x - 55
             if layer['bound']: # face
-                scaled_flipped_texture = layer['texture'].image.resize((int(layer['bound']['x']), int(layer['bound']['y']))).transpose(Image.Transpose.FLIP_TOP_BOTTOM)
-                layer['position']['y'] = math.ceil(layer['position']['y'])
-                # rounding up y seems to fix face positions (works for unknown4, tashigan_2, weizhang_3)
+                scaled_flipped_texture = layer['texture'].image.resize((round(layer['bound']['x']), round(layer['bound']['y']))).transpose(Image.Transpose.FLIP_TOP_BOTTOM)
             else:
                 scaled_flipped_texture = layer['texture'].image.resize(master.size).transpose(Image.Transpose.FLIP_TOP_BOTTOM)
-            master.alpha_composite(scaled_flipped_texture, (
-                int(layer['position']['x'] - layer['bound']['x'] * layer['pivot']['x'] - x0),
-                int(layer['position']['y'] - layer['bound']['y'] * layer['pivot']['y'] - y0)
-            ))
+            if 'box' in layer:
+                master.alpha_composite(scaled_flipped_texture, (round(layer['box'][0]), round(layer['box'][1])))
+            else: # todo: does this ever happen???
+                print('no box:', layer)
+                master.alpha_composite(scaled_flipped_texture, (
+                    round(layer['position']['x'] - layer['bound']['x'] * layer['pivot']['x'] - x0),
+                    round(layer['position']['y'] - layer['bound']['y'] * layer['pivot']['y'] - y0)
+                ))
     unflipped_master = master.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
     # unflipped_master.show()
 
