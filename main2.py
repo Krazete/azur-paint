@@ -59,7 +59,10 @@ def get_layers(asset, textures, layers={}, id=None, parent=None, face=None):
         if component.type.name == 'RectTransform':
             entry['position'] = tree['m_LocalPosition'] # unused; inaccurate as of 2024-05-16
             entry['scale'] = tree['m_LocalScale']
-            entry['delta'] = tree['m_SizeDelta']
+            entry['delta'] = {
+                'x': max(0, tree['m_SizeDelta']['x']), # fixes the problem with negative sizeDelta in the layers object for xiefeierde_4 and fuluoxiluofu
+                'y': max(0, tree['m_SizeDelta']['y'])  # todo: maybe these should be 0 for all layers objects? idk how to analyze the effect this would have tho
+            }
             entry['pivot'] = tree['m_Pivot']
 
             # calculate true m_LocalPosition
