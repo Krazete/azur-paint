@@ -59,10 +59,10 @@ def get_vertices(mesh, texture, save=False):
     if save:
         os.makedirs('output/intermediate', exist_ok=True)
         if mesh:
-            with open('output/intermediate/{}.obj'.format(mesh.name), 'w', newline='') as file:
+            with open('output/intermediate/{}.obj'.format(mesh.m_Name), 'w', newline='') as file:
                 file.write(mesh.export())
         if texture:
-            texture.image.save('output/intermediate/{}.png'.format(texture.name))
+            texture.image.save('output/intermediate/{}.png'.format(texture.m_Name))
     return v, vt
 
 def get_patches(texture, vt, save=False):
@@ -77,8 +77,8 @@ def get_patches(texture, vt, save=False):
         ymax = max(y for x, y in vt[a:b])
         patch = texture.image.crop((xmin, ymin, xmax, ymax))
         if save:
-            os.makedirs('output/intermediate/{}'.format(texture.name), exist_ok=True)
-            patch.save('output/intermediate/{}/{:03d}.png'.format(texture.name, i)) # todo: fix for aijier_4_n (SystemError: tile cannot extend outside image)
+            os.makedirs('output/intermediate/{}'.format(texture.m_Name), exist_ok=True)
+            patch.save('output/intermediate/{}/{:03d}.png'.format(texture.m_Name, i)) # todo: fix for aijier_4_n (SystemError: tile cannot extend outside image)
         patches.append(patch)
     return patches
 
@@ -106,8 +106,8 @@ def stitch_patches(canvas, patches, v, mesh):
         xmin = min(x for x, y in v[a:b])
         ymin = min(y for x, y in v[a:b])
         canvas.paste(patch, (
-            int(xmin + mesh.read_typetree()['m_LocalAABB']['m_Center']['x'] - mesh.read_typetree()['m_LocalAABB']['m_Extent']['x']),
-            int(ymin + canvas.height - mesh.read_typetree()['m_LocalAABB']['m_Center']['y'] - mesh.read_typetree()['m_LocalAABB']['m_Extent']['y'])
+            int(xmin + mesh.m_LocalAABB.m_Center.x - mesh.m_LocalAABB.m_Extent.x),
+            int(ymin + canvas.height - mesh.m_LocalAABB.m_Center.y - mesh.m_LocalAABB.m_Extent.y)
         ))
 
 def rebuild_sprite(name, show=False, save=True, save_intermediate=False):
@@ -149,7 +149,7 @@ def get_faces(name, save=True):
     if save:
         os.makedirs('output/faces', exist_ok=True)
         for face in faces:
-            face.image.save('output/faces/{}-{}.png'.format(name, face.name))
+            face.image.save('output/faces/{}-{}.png'.format(name, face.m_Name))
     return faces
 
 def get_face_anchor(info):
@@ -181,7 +181,7 @@ def paste_face(name, canvas, face, anchor, show=False, save=True):
         copy.show()
     if save:
         os.makedirs('output/expressions', exist_ok=True)
-        copy.save('output/expressions/{}-{}.png'.format(name, face.name))
+        copy.save('output/expressions/{}-{}.png'.format(name, face.m_Name))
 
 if __name__ == '__main__':
     from argparse import ArgumentParser

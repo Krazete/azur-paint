@@ -146,7 +146,7 @@ def wrapped(painting_name, out_file, crop, keep, facename, facetype, factor):
         for value in faces.assets[0].values():
             if value.type.name == 'Texture2D':
                 face = value.read()
-                if face.name == facetype:
+                if face.m_Name == facetype:
                     break
 
     env = UnityPyLoad(str(Path(root, 'painting', painting_name)))
