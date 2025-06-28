@@ -53,8 +53,9 @@ def get_vertices(mesh, texture, save=False):
     xmax = max(x for x, y, z in v_raw)
     ymax = max(y for x, y, z in v_raw)
     v = [(xmax - x, ymax - y) for x, y, z in v_raw]
-    w = texture.image.width
-    h = texture.image.height
+    image = texture.image
+    w = image.width
+    h = image.height
     vt = [(w * x, h - h * y) for x, y in vt_raw]
     if save:
         os.makedirs('output/intermediate', exist_ok=True)
@@ -62,11 +63,12 @@ def get_vertices(mesh, texture, save=False):
             with open('output/intermediate/{}.obj'.format(mesh.m_Name), 'w', newline='') as file:
                 file.write(mesh.export())
         if texture:
-            texture.image.save('output/intermediate/{}.png'.format(texture.m_Name))
+            image.save('output/intermediate/{}.png'.format(texture.m_Name))
     return v, vt
 
 def get_patches(texture, vt, save=False):
     patches = []
+    image = texture.image
     n = int(len(vt) / 4)
     for i in range(n):
         a = i * 4
@@ -75,7 +77,7 @@ def get_patches(texture, vt, save=False):
         xmax = max(x for x, y in vt[a:b])
         ymin = min(y for x, y in vt[a:b])
         ymax = max(y for x, y in vt[a:b])
-        patch = texture.image.crop((xmin, ymin, xmax, ymax))
+        patch = image.crop((xmin, ymin, xmax, ymax))
         if save:
             os.makedirs('output/intermediate/{}'.format(texture.m_Name), exist_ok=True)
             patch.save('output/intermediate/{}/{:03d}.png'.format(texture.m_Name, i)) # todo: fix for aijier_4_n (SystemError: tile cannot extend outside image)
