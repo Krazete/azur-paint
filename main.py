@@ -53,9 +53,8 @@ def get_vertices(mesh, texture, save=False):
     xmax = max(x for x, y, z in v_raw)
     ymax = max(y for x, y, z in v_raw)
     v = [(xmax - x, ymax - y) for x, y, z in v_raw]
-    image = texture.image
-    w = image.width
-    h = image.height
+    w = texture.m_Width
+    h = texture.m_Height
     vt = [(w * x, h - h * y) for x, y in vt_raw]
     if save:
         os.makedirs('output/intermediate', exist_ok=True)
@@ -63,12 +62,12 @@ def get_vertices(mesh, texture, save=False):
             with open('output/intermediate/{}.obj'.format(mesh.m_Name), 'w', newline='') as file:
                 file.write(mesh.export())
         if texture:
-            image.save('output/intermediate/{}.png'.format(texture.m_Name))
+            texture.image.save('output/intermediate/{}.png'.format(texture.m_Name))
     return v, vt
 
 def get_patches(texture, vt, save=False):
-    patches = []
     image = texture.image
+    patches = []
     n = int(len(vt) / 4)
     for i in range(n):
         a = i * 4
