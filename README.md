@@ -28,6 +28,7 @@ python -m main2 -p tower -s pixelcount -o "TowerBelow2048sqpx"
   * `-p`: name of assetbundle file in `painting` folder
   * `-f`: name of face file in `paintingface` folder
     * `-1`: bypass default face detection (otherwise, checks for 0-index face and applies it if found)
+    * may leave this undeclared if it's the same as the `-p` value prefix
   * `-t`: name of face index within chosen face file
   * `-d`: directory name, if it isn't AssetBundles
   * `-o`: name of output file

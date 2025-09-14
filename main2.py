@@ -155,13 +155,14 @@ def wrapped(painting_name, out_file, crop, keep, facename, facetype, factor):
         for value in faces.assets[0].values():
             if value.type.name == 'Texture2D':
                 face0 = value.read()
-                if face0.m_Name == '0':
+                type0 = facetype or '0'
+                if face0.m_Name == type0:
                     face = face0
-                    print('WARNING: There is a 0-index expression within {}.'.format(painting_name))
-                    print('         This will be used since it is likely the default expression.')
-                    print('         To output without any face applied, rerun with -f -1.')
+                    if facetype == None:
+                        print('WARNING: There is a 0-index expression within {}.'.format(painting_name))
+                        print('         This will be used since it is likely the default expression.')
+                        print('         To output without any face applied, rerun with -f -1.')
                     break
-
 
     env = UnityPyLoad(str(Path(root, 'painting', painting_name)))
     layers = {}
