@@ -145,24 +145,26 @@ def wrapped(painting_name, out_file, crop, keep, facename, facetype, factor):
         pass
     elif facename != None:
         faces = UnityPyLoad(str(Path(root, 'paintingface', facename)))
-        for value in faces.assets[0].values():
-            if value.type.name == 'Texture2D':
-                face = value.read()
-                if face.m_Name == facetype:
-                    break
+        if faces.assets:
+            for value in faces.assets[0].values():
+                if value.type.name == 'Texture2D':
+                    face = value.read()
+                    if face.m_Name == facetype:
+                        break
     else:
         faces = UnityPyLoad(str(Path(root, 'paintingface', re.sub('(_n|_hx|_bj|_rw|_wjz)+', '', painting_name))))
-        for value in faces.assets[0].values():
-            if value.type.name == 'Texture2D':
-                face0 = value.read()
-                type0 = facetype or '0'
-                if face0.m_Name == type0:
-                    face = face0
-                    if facetype == None:
-                        print('WARNING: There is a 0-index expression within {}.'.format(painting_name))
-                        print('         This will be used since it is likely the default expression.')
-                        print('         To output without any face applied, rerun with -f -1.')
-                    break
+        if faces.assets:
+            for value in faces.assets[0].values():
+                if value.type.name == 'Texture2D':
+                    face0 = value.read()
+                    type0 = facetype or '0'
+                    if face0.m_Name == type0:
+                        face = face0
+                        if facetype == None:
+                            print('WARNING: There is a 0-index expression within {}.'.format(painting_name))
+                            print('         This will be used since it is likely the default expression.')
+                            print('         To output without any face applied, rerun with -f -1.')
+                        break
 
     env = UnityPyLoad(str(Path(root, 'painting', painting_name)))
     layers = {}
