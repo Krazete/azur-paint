@@ -2,6 +2,8 @@
 
 Builds sprites from the jumbled Texture2Ds and Meshes available in the `AssetBundles/painting` folder. Also requires the `AssetBundles/dependencies` file. These are both located within `Android/data/com.YoStarEN.AzurLane/files`.
 
+> Other files and folders may also be needed. For example, `painting/kansasi_2_n` contains `paintings/kansasi_2_n` in its `dependencies` list instead of the conventional `painting/kansasi_2_n_tex` file path format.
+
 ![azur-paint diagram](azur-paint.svg "made with draw.io")
 
 This repo was inspired by:
