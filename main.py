@@ -83,7 +83,7 @@ def get_patches(texture, vt, save=False):
         patches.append(patch)
     return patches
 
-def get_canvas(v, size=None):
+def get_canvas(v, size=None, padding=0):
     xmin = min(x for x, y in v)
     xmax = max(x for x, y in v)
     ymin = min(y for x, y in v)
@@ -97,7 +97,7 @@ def get_canvas(v, size=None):
         print('  Reported width ({}) and mesh width ({}) do not match.'.format(size[0], dx))
     if size[1] != dy:
         print('  Reported height ({}) and mesh height ({}) do not match.'.format(size[1], dy))
-    truesize = (max(size[0], dx), max(size[1], dy))
+    truesize = (max(size[0], dx) + padding, max(size[1], dy) + padding)
     return Image.new('RGBA', truesize), truesize
 
 def stitch_patches(canvas, patches, v, mesh):

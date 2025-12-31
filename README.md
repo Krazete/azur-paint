@@ -40,6 +40,8 @@ python -m main2 -p tower -s pixelcount -o "TowerBelow2048sqpx"
 * parameters that are flags:
   * `-c`: trim out whitespace
   * `-k`: output an additional version of sprite at original resolution
+  * `-dep`: save dependencies map json file
+  * `-fix`: attempt to fix cropping issues by padding intermediate canvases
 
 ## Other Scripts
 

@@ -2,6 +2,7 @@ from main import *
 from pathlib import Path
 import re
 import math
+import json
 
 root = Path('AssetBundles')
 
@@ -127,7 +128,7 @@ def get_layers(asset, textures, layers={}, id=None, parent=None, face=None):
             child_id = rt['m_GameObject']['m_PathID']
             get_layers(asset, textures, layers, child_id, id, face)
 
-def wrapped(painting_name, out_file, crop, keep, facename, facetype, factor):
+def wrapped(painting_name, out_file, crop, keep, facename, facetype, factor, save_dependencies, there_is_a_cropping_problem):
     # painting_name = 'shaenhuosite_alter'
     # painting_name = 'makeboluo'
     # painting_name = 'tower'
@@ -138,6 +139,9 @@ def wrapped(painting_name, out_file, crop, keep, facename, facetype, factor):
 
     depmap = get_dependencies()
     textures = UnityPyLoad(*['{}/{}'.format(root, fn) for fn in depmap['painting/{}'.format(painting_name)]])
+    if save_dependencies:
+        with open('output2/depmap.json', 'w') as fp:
+            json.dump({fn: depmap[fn] for fn in depmap if len(depmap[fn])}, fp, indent=4)
 
     # face stuff
     face = None
@@ -224,7 +228,9 @@ def wrapped(painting_name, out_file, crop, keep, facename, facetype, factor):
         if 'mesh' in layer and 'texture' in layer:
             v, vt = get_vertices(layer['mesh'], layer['texture'])
             patches = get_patches(layer['texture'], vt)
-            canvas, truesize = get_canvas(v, (round(layer['size']['x']), round(layer['size']['y'])))
+            canvas, truesize = get_canvas(v, (round(layer['size']['x']), round(layer['size']['y'])),
+                1000 if there_is_a_cropping_problem else 0 # quick fix if anything is erroneously cropped
+            )
             print(truesize, layer['size'])
             stitch_patches(canvas, patches, v, layer['mesh'])
             scaled_flipped_canvas = canvas.resize((
@@ -292,6 +298,8 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--crop', action='store_true', help='trim empty space from output')
     parser.add_argument('-k', '--keep_original', action='store_true', help='save full resolution sprite too')
     parser.add_argument('-s', '--scale_factor', type=str, help='downscale factor: maxsize (max(w,h) < 2048; default) or pixelcount (w*h < 2048^2)')
+    parser.add_argument('-dep', '--save_dependencies', action='store_true', help='save dependencies map')
+    parser.add_argument('-fix', '--quickfix', action='store_true', help='try to fix cropping problem')
     args = parser.parse_args()
 
     if not args.painting_name:
@@ -310,6 +318,26 @@ if __name__ == '__main__':
 
     if ':' in args.painting_name or ':' in args.out_file:
         for painting_name, out_file in zip(args.painting_name.split(':'), args.out_file.split(':')):
-            wrapped(painting_name, out_file, args.crop, args.keep_original, args.face_name, args.face_type, args.scale_factor)
+            wrapped(
+                painting_name,
+                out_file,
+                args.crop,
+                args.keep_original,
+                args.face_name,
+                args.face_type,
+                args.scale_factor,
+                args.save_dependencies,
+                args.quickfix
+            )
     else:
-        wrapped(args.painting_name, args.out_file, args.crop, args.keep_original, args.face_name, args.face_type, args.scale_factor)
+        wrapped(
+            args.painting_name,
+            args.out_file,
+            args.crop,
+            args.keep_original,
+            args.face_name,
+            args.face_type,
+            args.scale_factor,
+            args.save_dependencies,
+            args.quickfix
+        )

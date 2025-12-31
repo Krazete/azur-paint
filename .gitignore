@@ -16,5 +16,6 @@ AssetBundles/**
 output/**
 !output/aijiang.png
 !output/ankeleiqi.png
+output2/**
 venv
 painting_reconstruct.py
