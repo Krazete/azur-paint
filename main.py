@@ -2,6 +2,8 @@ import os
 import UnityPy
 from PIL import Image
 
+UnityPy.config.FALLBACK_UNITY_VERSION = "2022.3.62f3"
+
 def UnityPyLoad(*args):
     return UnityPy.load(*(arg if os.path.isfile(arg) else (arg + '.ys') for arg in args))
 
